@@ -51,16 +51,14 @@ We will follow the user's preferred structure, keeping layers distinct to ensure
 *   [x] **Milestone**: Functional end-to-end search (without deep ranking/explanation).
 
 ### Phase 4: Intelligence & Refinement (The "Why")
-*   [ ] Enhance AI integration to perform "Re-ranking" and "Explanation".
-    *   Pass the OpenLibrary results *back* to Gemini with the original prompt.
-    *   Ask Gemini to select the best matches and explain *why*.
-*   [ ] Implement the specific matching hierarchy (Exact title > Title+Author, etc.) as defined in requirements.
-*   [ ] Handle edge cases (No results, ambiguous queries).
+*   [x] Enhance AI integration to perform "Re-ranking" and "Explanation".
+*   [x] Implement the specific matching hierarchy (Exact title > Title+Author, etc.) as defined in requirements.
+*   [x] Handle edge cases (No results, ambiguous queries).
 
 ### Phase 5: Polish & Final Review
-*   [ ] Add comprehensive Unit Tests for the Orchestrator and Parsers.
-*   [ ] Ensure `README.md` documents setup and key choices.
-*   [ ] Final code cleanup and strict architectural review.
+*   [x] Add comprehensive Unit Tests for the Orchestrator and Parsers (Core ranking logic tested).
+*   [x] Ensure `README.md` documents setup and key choices.
+*   [x] Final code cleanup and strict architectural review.
 
 ### Future Phase: Web UI
 *   [ ] React App `FindThatBook.Web`.
