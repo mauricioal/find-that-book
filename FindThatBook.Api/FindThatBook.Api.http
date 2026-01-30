@@ -1,0 +1,7 @@
+@FindThatBook.Api_HostAddress = http://localhost:5249
+
+GET {{FindThatBook.Api_HostAddress}}/api/search?query=mark huckleberry
+Accept: application/json
+
+GET 
+###

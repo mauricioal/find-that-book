@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "YgmrT3/ZgDmrMuXRIWlpa8pkVrDdMSIS+BVHpNFQ1po=",
+  "Source": "FindThatBook.Api",
+  "BasePath": "_content/FindThatBook.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
