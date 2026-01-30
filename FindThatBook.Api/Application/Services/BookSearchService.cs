@@ -12,11 +12,13 @@ public class BookSearchService : IBookSearchService
 {
     private readonly IAiService _aiService;
     private readonly IOpenLibraryClient _openLibraryClient;
+    private readonly IBookMatcher _matcher;
 
-    public BookSearchService(IAiService aiService, IOpenLibraryClient openLibraryClient)
+    public BookSearchService(IAiService aiService, IOpenLibraryClient openLibraryClient, IBookMatcher matcher)
     {
         _aiService = aiService;
         _openLibraryClient = openLibraryClient;
+        _matcher = matcher;
     }
 
     public async Task<IEnumerable<BookCandidate>> SearchAsync(string query, CancellationToken ct = default)
@@ -27,10 +29,25 @@ public class BookSearchService : IBookSearchService
         if (!intent.IsValid) return Enumerable.Empty<BookCandidate>();
 
         // 2. Search OpenLibrary
-        var candidates = await _openLibraryClient.SearchBooksAsync(intent, ct);
+        var candidates = (await _openLibraryClient.SearchBooksAsync(intent, ct)).ToList();
 
-        // 3. Rank and Explain
-        var results = await _aiService.RankAndExplainResultsAsync(query, candidates, ct);
+        // 3. Resolve Primary Authors and Apply Hierarchy
+        foreach (var candidate in candidates)
+        {
+            var primaryAuthors = await _openLibraryClient.GetPrimaryAuthorsAsync(candidate.OpenLibraryId, ct);
+            bool isPrimary = primaryAuthors.Any(pa => intent.Author != null && pa.Contains(intent.Author, StringComparison.OrdinalIgnoreCase));
+            
+            candidate.Rank = _matcher.CalculateRank(intent, candidate, isPrimary);
+        }
+
+        // 4. Sort by Rank
+        var rankedCandidates = candidates
+            .Where(c => c.Rank != Domain.Enums.MatchRank.None)
+            .OrderByDescending(c => c.Rank)
+            .Take(5);
+
+        // 5. AI refinement (Rank and Explain)
+        var results = await _aiService.RankAndExplainResultsAsync(query, rankedCandidates, ct);
 
         return results;
     }

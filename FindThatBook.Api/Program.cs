@@ -24,6 +24,7 @@ builder.Services.AddSingleton<IChatClient>(new GeminiChatClient(new GeminiClient
 // Infrastructure & Application
 builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>();
 builder.Services.AddScoped<IAiService, GeminiAiService>();
+builder.Services.AddScoped<IBookMatcher, BookMatcher>();
 builder.Services.AddScoped<IBookSearchService, BookSearchService>();
 
 var app = builder.Build();

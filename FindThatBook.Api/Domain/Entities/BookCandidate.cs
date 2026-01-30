@@ -1,3 +1,5 @@
+using FindThatBook.Api.Domain.Enums;
+
 namespace FindThatBook.Api.Domain.Entities;
 
 public class BookCandidate
@@ -8,4 +10,5 @@ public class BookCandidate
     public string OpenLibraryId { get; set; } = string.Empty;
     public string? CoverUrl { get; set; }
     public string Explanation { get; set; } = string.Empty;
+    public MatchRank Rank { get; set; } = MatchRank.None;
 }

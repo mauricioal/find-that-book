@@ -39,6 +39,55 @@ public class OpenLibraryClient : IOpenLibraryClient
         });
     }
 
+    public async Task<List<string>> GetPrimaryAuthorsAsync(string workKey, CancellationToken ct = default)
+    {
+        try
+        {
+            // workKey is usually "/works/OL...W"
+            var work = await _httpClient.GetFromJsonAsync<OpenLibraryWork>($"{workKey}.json", ct);
+            if (work?.Authors == null) return new List<string>();
+
+            var authorNames = new List<string>();
+            foreach (var authorRole in work.Authors)
+            {
+                if (authorRole.Author?.Key != null)
+                {
+                    var author = await _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{authorRole.Author.Key}.json", ct);
+                    if (!string.IsNullOrEmpty(author?.Name)) authorNames.Add(author.Name);
+                }
+            }
+            return authorNames;
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }
+
+    private class OpenLibraryWork
+    {
+        [JsonPropertyName("authors")]
+        public List<AuthorRole>? Authors { get; set; }
+    }
+
+    private class AuthorRole
+    {
+        [JsonPropertyName("author")]
+        public AuthorKey? Author { get; set; }
+    }
+
+    private class AuthorKey
+    {
+        [JsonPropertyName("key")]
+        public string? Key { get; set; }
+    }
+
+    private class OpenLibraryAuthor
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+    }
+
     private class OpenLibrarySearchResponse
     {
         [JsonPropertyName("docs")]
