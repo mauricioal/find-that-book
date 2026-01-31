@@ -25,6 +25,18 @@ dotnet run
 ```
 The API will start (typically on `http://localhost:5000` or `https://localhost:5001`).
 
+### Running the Web Application (Frontend)
+1.  Navigate to the `FindThatBook.Web` directory.
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+4.  Open your browser to `http://localhost:5173`.
+
 ### Testing a Request
 You can test the search via a browser or curl:
 ```bash

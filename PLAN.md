@@ -61,4 +61,4 @@ We will follow the user's preferred structure, keeping layers distinct to ensure
 *   [x] Final code cleanup and strict architectural review.
 
 ### Future Phase: Web UI
-*   [ ] React App `FindThatBook.Web`.
+*   [x] React App `FindThatBook.Web`.
