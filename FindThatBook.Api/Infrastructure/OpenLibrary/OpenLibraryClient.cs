@@ -8,10 +8,12 @@ namespace FindThatBook.Api.Infrastructure.OpenLibrary;
 public class OpenLibraryClient : IOpenLibraryClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<OpenLibraryClient> _logger;
 
-    public OpenLibraryClient(HttpClient httpClient)
+    public OpenLibraryClient(HttpClient httpClient, ILogger<OpenLibraryClient> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
         _httpClient.BaseAddress = new Uri("https://openlibrary.org/");
     }
 
@@ -43,23 +45,24 @@ public class OpenLibraryClient : IOpenLibraryClient
     {
         try
         {
-            // workKey is usually "/works/OL...W"
             var work = await _httpClient.GetFromJsonAsync<OpenLibraryWork>($"{workKey}.json", ct);
             if (work?.Authors == null) return new List<string>();
 
-            var authorNames = new List<string>();
-            foreach (var authorRole in work.Authors)
-            {
-                if (authorRole.Author?.Key != null)
-                {
-                    var author = await _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{authorRole.Author.Key}.json", ct);
-                    if (!string.IsNullOrEmpty(author?.Name)) authorNames.Add(author.Name);
-                }
-            }
-            return authorNames;
+            // Fetch authors in parallel to avoid N+1 sequential penalty
+            var authorTasks = work.Authors
+                .Where(a => a.Author?.Key != null)
+                .Select(a => _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{a.Author!.Key}.json", ct));
+
+            var authors = await Task.WhenAll(authorTasks);
+            
+            return authors
+                .Where(a => !string.IsNullOrEmpty(a?.Name))
+                .Select(a => a!.Name!)
+                .ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error fetching primary authors for work {WorkKey}", workKey);
             return new List<string>();
         }
     }

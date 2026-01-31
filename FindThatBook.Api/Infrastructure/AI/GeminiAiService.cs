@@ -26,11 +26,7 @@ public class GeminiAiService : IAiService
             """;
 
         var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
-        var content = response.Text ?? string.Empty;
-        
-        // Basic cleanup in case LLM wraps JSON in markdown blocks
-        if (content.StartsWith("```json")) content = content.Replace("```json", "").Replace("```", "");
-        else if (content.StartsWith("```")) content = content.Replace("```", "");
+        var content = CleanLlmJson(response.Text);
 
         try 
         {
@@ -59,10 +55,7 @@ public class GeminiAiService : IAiService
             """;
 
         var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
-        var content = response.Text ?? string.Empty;
-
-        if (content.StartsWith("```json")) content = content.Replace("```json", "").Replace("```", "");
-        else if (content.StartsWith("```")) content = content.Replace("```", "");
+        var content = CleanLlmJson(response.Text);
 
         try 
         {
@@ -72,5 +65,16 @@ public class GeminiAiService : IAiService
         {
             return candidates;
         }
+    }
+
+    private static string CleanLlmJson(string? content)
+    {
+        if (string.IsNullOrEmpty(content)) return string.Empty;
+
+        // Basic cleanup in case LLM wraps JSON in markdown blocks
+        if (content.StartsWith("```json")) content = content.Replace("```json", "").Replace("```", "");
+        else if (content.StartsWith("```")) content = content.Replace("```", "");
+        
+        return content.Trim();
     }
 }
