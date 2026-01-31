@@ -17,12 +17,31 @@ public class GeminiAiService : IAiService
 
     public async Task<SearchIntent> ExtractSearchIntentAsync(string rawQuery, CancellationToken ct = default)
     {
-        var prompt = $"""
-            Extract the book search intent from the following messy user query.
-            Return ONLY a JSON object with the following fields: "Title", "Author", "Keywords" (a list of strings).
-            If a field is unknown, leave it null or empty.
+        var prompt = $$"""
+            You are an expert Librarian AI. Your task is to interpret messy or sparse user queries and translate them into a structured search intent for the OpenLibrary API.
             
-            User query: "{rawQuery}"
+            ### Rules
+            1. **Authors:** If the query is a famous author's name (e.g., "Tolkien", "King", "Austen"), map it to "Author".
+            2. **Titles:** If the query looks like a specific book title (e.g., "1984", "The Hobbit"), map it to "Title".
+            3. **Inference:** You are allowed to infer full names if the input is partial but obvious (e.g., "mark huckleberry" -> Author: "Mark Twain", Title: "Adventures of Huckleberry Finn").
+            4. **Keywords:** Use this for extra terms like "illustrated", "first edition", or genre.
+
+            ### Examples
+            User: "tolkien"
+            JSON: { "Title": null, "Author": "J.R.R. Tolkien", "Keywords": [] }
+
+            User: "the hobbit"
+            JSON: { "Title": "The Hobbit", "Author": null, "Keywords": [] }
+
+            User: "mark huckleberry"
+            JSON: { "Title": "The Adventures of Huckleberry Finn", "Author": "Mark Twain", "Keywords": [] }
+
+            User: "harry potter illustrated"
+            JSON: { "Title": "Harry Potter", "Author": "J.K. Rowling", "Keywords": ["illustrated"] }
+
+            ### Task
+            User query: "{{rawQuery}}"
+            Return ONLY the JSON object.
             """;
 
         var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
