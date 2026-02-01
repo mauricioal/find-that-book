@@ -21,23 +21,48 @@ public class GeminiAiService : IAiService
             You are an expert Librarian AI. Your task is to interpret messy or sparse user queries and translate them into a structured search intent for the OpenLibrary API.
             
             ### Rules
-            1. **Authors:** If the query is a famous author's name (e.g., "Tolkien", "King", "Austen"), map it to "Author".
-            2. **Titles:** If the query looks like a specific book title (e.g., "1984", "The Hobbit"), map it to "Title".
+            1. **Authors:** If the query is a famous author's name (e.g., "Tolkien", "King", "Austen"), map it to "Author". Don't include author if the query does not indicate an author even if it's a partial match.
+            2. **Titles:** If the query looks like a specific book title (e.g., "1984", "The Hobbit"), map it to "Title". Don't include title if the query does not indicate a title even if it's a partial match.
             3. **Inference:** You are allowed to infer full names if the input is partial but obvious (e.g., "mark huckleberry" -> Author: "Mark Twain", Title: "Adventures of Huckleberry Finn").
             4. **Keywords:** Use this for extra terms like "illustrated", "first edition", or genre.
+            5. **Explanation:** For EACH attribute (Title, Author, Keywords), you MUST explain *why* you filled it with that value. Explicitly state if you extracted an exact string from the query or if you transformed/inferred it (normalization).
 
             ### Examples
             User: "tolkien"
-            JSON: { "Title": null, "Author": "J.R.R. Tolkien", "Keywords": [] }
+            JSON: { 
+                "Title": null, 
+                "Author": "J.R.R. Tolkien", 
+                "Keywords": [],
+                "Explanation": {
+                    "TitleReason": "No title identified.",
+                    "AuthorReason": "Inferred 'J.R.R. Tolkien' from exact match 'tolkien'.",
+                    "KeywordsReason": "No keywords found."
+                }
+            }
 
             User: "the hobbit"
-            JSON: { "Title": "The Hobbit", "Author": null, "Keywords": [] }
+            JSON: { 
+                "Title": "The Hobbit", 
+                "Author": null, 
+                "Keywords": [],
+                "Explanation": {
+                    "TitleReason": "Extracted exact title 'the hobbit'.",
+                    "AuthorReason": "No author identified.",
+                    "KeywordsReason": "No keywords found."
+                }
+            }
 
             User: "mark huckleberry"
-            JSON: { "Title": "The Adventures of Huckleberry Finn", "Author": "Mark Twain", "Keywords": [] }
-
-            User: "harry potter illustrated"
-            JSON: { "Title": "Harry Potter", "Author": "J.K. Rowling", "Keywords": ["illustrated"] }
+            JSON: { 
+                "Title": "The Adventures of Huckleberry Finn", 
+                "Author": "Mark Twain", 
+                "Keywords": [],
+                "Explanation": {
+                    "TitleReason": "Inferred title from 'huckleberry'.",
+                    "AuthorReason": "Inferred 'Mark Twain' from 'mark' in context of 'huckleberry'.",
+                    "KeywordsReason": "No keywords found."
+                }
+            }
 
             ### Task
             User query: "{{rawQuery}}"
@@ -57,7 +82,7 @@ public class GeminiAiService : IAiService
         }
     }
 
-    public async Task<IEnumerable<BookCandidate>> RankAndExplainResultsAsync(string rawQuery, IEnumerable<BookCandidate> candidates, CancellationToken ct = default)
+    public async Task<IEnumerable<BookCandidate>> RankAndExplainResultsAsync(string rawQuery, SearchIntent intent, IEnumerable<BookCandidate> candidates, CancellationToken ct = default)
     {
         if (!candidates.Any()) return candidates;
 
@@ -71,21 +96,24 @@ public class GeminiAiService : IAiService
         });
 
         var prompt = $$"""
-            You are a helpful librarian. A user is searching for a book with this query: "{{rawQuery}}".
+            You are an expert Librarian AI. A user searched for a book using a messy or sparse user query.
             
-            Below is a list of results matched by our system. Your task is to provide a concise (1-2 sentences) explanation for EACH result, explaining "why this book" based on the technical match data provided.
+            Original Query (Raw user input): "{{rawQuery}}"
             
-            ### Grounding Rules:
-            - If MatchType is 'ExactTitle', explicitly state that the title matched exactly.
-            - If MatchType is 'NearMatchTitle', state that the title is a partial or fuzzy match.
-            - If AuthorStatus is 'Primary', you may mention the author for context (e.g., "written by..."), but only cite them as a "match reason" if the query seems to include an author name, and that author is the primary author of the book according to you knowledge, if not assume the AuthorStatus is 'Contributor'.
-            - If AuthorStatus is 'Contributor', mention they are a contributor (illustrator, editor, etc).
-            - Always cite the specific fields that matched.
+            You INTERPRETED the query as:
+            Title: {{intent.Title}} (INTERPRETED Explanation: {{intent.Explanation?.TitleReason}})
+            Author: {{intent.Author}} (INTERPRETED Explanation: {{intent.Explanation?.AuthorReason}})
+            Keywords: {{string.Join(", ", intent.Keywords)}} (INTERPRETED Explanation: {{intent.Explanation?.KeywordsReason}})
             
+            Below is a list of results matched by our system (CANDIDATES). Your task is to provide a concise (1-2 sentences) explanation for EACH result, explaining "why this book" matched based on the data provided AND your interpretation of the query.
+            For your reasoning compare the Original Query (Raw user input) against INTERPRETED title/author/keywords and CANDIDATE title/author/keywords.
+
+            The explanation should express your reasoning of why the Original Query (Raw user input) matched the candidate based on the INTERPRETED Explanation for each field.
+
             ### Output Format:
             Return ONLY a JSON array of objects, where each object has all the original fields PLUS the "Explanation" field.
             
-            Candidates:
+            CANDIDATES:
             {{JsonSerializer.Serialize(candidatesData)}}
             """;
 

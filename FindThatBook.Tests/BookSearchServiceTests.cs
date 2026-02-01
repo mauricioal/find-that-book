@@ -59,8 +59,8 @@ public class BookSearchServiceTests
         _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[2], It.IsAny<bool>()))
             .Returns(new MatchResult(MatchRank.StrongMatch, DomainMatchType.ExactTitle, AuthorStatus.Primary));
 
-        _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string q, IEnumerable<BookCandidate> cands, CancellationToken ct) => cands);
+        _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, intent, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string q, SearchIntent i, IEnumerable<BookCandidate> cands, CancellationToken ct) => cands);
 
         // Act
         var results = (await _service.SearchAsync(query)).ToList();
@@ -101,8 +101,8 @@ public class BookSearchServiceTests
         _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[1], It.IsAny<bool>()))
             .Returns(new MatchResult(MatchRank.AuthorOnlyFallback, DomainMatchType.AuthorOnly, AuthorStatus.Primary));
 
-        _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string q, IEnumerable<BookCandidate> cands, CancellationToken ct) => cands);
+        _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, intent, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string q, SearchIntent i, IEnumerable<BookCandidate> cands, CancellationToken ct) => cands);
 
         // Act
         var results = (await _service.SearchAsync(query)).ToList();

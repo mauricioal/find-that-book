@@ -58,7 +58,7 @@ public class BookSearchService : IBookSearchService
             .ToList();
 
         // 5. AI Generation of grounded explanations
-        var results = await _aiService.RankAndExplainResultsAsync(query, rankedCandidates, ct);
+        var results = await _aiService.RankAndExplainResultsAsync(query, intent, rankedCandidates, ct);
 
         return results;
     }
