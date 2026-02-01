@@ -78,7 +78,7 @@ public class GeminiAiService : IAiService
             ### Grounding Rules:
             - If MatchType is 'ExactTitle', explicitly state that the title matched exactly.
             - If MatchType is 'NearMatchTitle', state that the title is a partial or fuzzy match.
-            - If AuthorStatus is 'Primary', mention they are the primary author.
+            - If AuthorStatus is 'Primary', you may mention the author for context (e.g., "written by..."), but only cite them as a "match reason" if the query seems to include an author name.
             - If AuthorStatus is 'Contributor', mention they are a contributor (illustrator, editor, etc).
             - Always cite the specific fields that matched.
             
