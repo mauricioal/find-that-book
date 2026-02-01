@@ -34,10 +34,24 @@ public class BookSearchService : IBookSearchService
         // 3. Resolve Primary Authors and Apply Hierarchy
         foreach (var candidate in candidates)
         {
-            var primaryAuthors = await _openLibraryClient.GetPrimaryAuthorsAsync(candidate.OpenLibraryId, ct);
-            bool isPrimary = primaryAuthors.Any(pa => intent.Author != null && pa.Contains(intent.Author, StringComparison.OrdinalIgnoreCase));
+            var (primaryAuthors, contributors) = await _openLibraryClient.GetAuthorDetailsAsync(candidate.OpenLibraryId, ct);
+            candidate.PrimaryAuthors = primaryAuthors;
             
-            var matchResult = _matcher.CalculateMatch(query, intent, candidate, isPrimary);
+            // Derive contributors: Start with those explicitly found (if any), then add those from search result not in primary
+            var distinctContributors = new HashSet<string>(contributors, StringComparer.OrdinalIgnoreCase);
+            
+            // Search result authors might include contributors not in Work record or explicitly marked
+            foreach (var author in candidate.Authors)
+            {
+                // If this author is NOT in the primary list, assume it's a contributor
+                if (!candidate.PrimaryAuthors.Any(pa => pa.Equals(author, StringComparison.OrdinalIgnoreCase)))
+                {
+                    distinctContributors.Add(author);
+                }
+            }
+            candidate.Contributors = distinctContributors.ToList();
+            
+            var matchResult = _matcher.CalculateMatch(query, intent, candidate);
             candidate.Rank = matchResult.Rank;
             candidate.MatchType = matchResult.MatchType;
             candidate.AuthorStatus = matchResult.AuthorStatus;

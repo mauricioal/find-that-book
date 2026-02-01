@@ -7,5 +7,5 @@ public record MatchResult(MatchRank Rank, FindThatBook.Api.Domain.Enums.MatchTyp
 
 public interface IBookMatcher
 {
-    MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate, bool isPrimaryAuthor);
+    MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate);
 }

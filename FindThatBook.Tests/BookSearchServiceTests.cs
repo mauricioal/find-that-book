@@ -45,18 +45,18 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetPrimaryAuthorsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<string>());
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock different ranks:
         // Book 1: StrongMatch (4)
         // Book 2: NearMatch (2)
         // Book 3: StrongMatch (4)
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0]))
             .Returns(new MatchResult(MatchRank.StrongMatch, DomainMatchType.ExactTitle, AuthorStatus.Primary));
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[1], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[1]))
             .Returns(new MatchResult(MatchRank.NearMatch, DomainMatchType.NearMatchTitle, AuthorStatus.Primary));
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[2], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[2]))
             .Returns(new MatchResult(MatchRank.StrongMatch, DomainMatchType.ExactTitle, AuthorStatus.Primary));
 
         _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, intent, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
@@ -90,15 +90,15 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetPrimaryAuthorsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<string>());
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock ranks:
         // Book 1: NearMatch (2)
         // Book 2: AuthorOnlyFallback (1)
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0]))
             .Returns(new MatchResult(MatchRank.NearMatch, DomainMatchType.NearMatchTitle, AuthorStatus.Primary));
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[1], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[1]))
             .Returns(new MatchResult(MatchRank.AuthorOnlyFallback, DomainMatchType.AuthorOnly, AuthorStatus.Primary));
 
         _aiServiceMock.Setup(x => x.RankAndExplainResultsAsync(query, intent, It.IsAny<IEnumerable<BookCandidate>>(), It.IsAny<CancellationToken>()))
@@ -130,11 +130,11 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetPrimaryAuthorsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<string>());
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock rank: None
-        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0], It.IsAny<bool>()))
+        _matcherMock.Setup(x => x.CalculateMatch(query, intent, candidates[0]))
             .Returns(new MatchResult(MatchRank.None, DomainMatchType.None, AuthorStatus.Unknown));
 
         // Act

@@ -23,11 +23,12 @@ public class BookMatcherTests
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Authors = new List<string> { "J.R.R. Tolkien" },
+            PrimaryAuthors = new List<string> { "J.R.R. Tolkien" }
         };
 
         // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
 
         // Assert
         result.Rank.Should().Be(MatchRank.StrongMatch);
@@ -44,11 +45,13 @@ public class BookMatcherTests
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Authors = new List<string> { "J.R.R. Tolkien" },
+            PrimaryAuthors = new List<string> { "Other Author" },
+            Contributors = new List<string> { "J.R.R. Tolkien" }
         };
 
         // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false);
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
 
         // Assert
         result.Rank.Should().Be(MatchRank.TitleAndContributorMatch);
@@ -65,11 +68,12 @@ public class BookMatcherTests
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Authors = new List<string> { "J.R.R. Tolkien" },
+            PrimaryAuthors = new List<string> { "J.R.R. Tolkien" }
         };
 
         // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
 
         // Assert
         result.Rank.Should().Be(MatchRank.NearMatch);
@@ -85,11 +89,12 @@ public class BookMatcherTests
         var candidate = new BookCandidate 
         { 
             Title = "The Silmarillion", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Authors = new List<string> { "J.R.R. Tolkien" },
+            PrimaryAuthors = new List<string> { "J.R.R. Tolkien" }
         };
 
         // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
 
         // Assert
         result.Rank.Should().Be(MatchRank.AuthorOnlyFallback);
@@ -109,7 +114,7 @@ public class BookMatcherTests
         };
 
         // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false); 
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate); 
 
         // Assert
         result.Rank.Should().Be(MatchRank.StrongMatch);

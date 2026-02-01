@@ -44,29 +44,36 @@ public class OpenLibraryClient : IOpenLibraryClient
         });
     }
 
-    public async Task<List<string>> GetPrimaryAuthorsAsync(string workKey, CancellationToken ct = default)
+    public async Task<(List<string> PrimaryAuthors, List<string> Contributors)> GetAuthorDetailsAsync(string workKey, CancellationToken ct = default)
     {
         try
         {
             var work = await _httpClient.GetFromJsonAsync<OpenLibraryWork>($"{workKey}.json", ct);
-            if (work?.Authors == null) return new List<string>();
+            var primaryAuthors = new List<string>();
 
-            // Fetch authors in parallel to avoid N+1 sequential penalty
-            var authorTasks = work.Authors
-                .Where(a => a.Author?.Key != null)
-                .Select(a => _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{a.Author!.Key}.json", ct));
+            if (work?.Authors != null)
+            {
+                // Fetch authors in parallel
+                var authorTasks = work.Authors
+                    .Where(a => a.Author?.Key != null)
+                    .Select(a => _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{a.Author!.Key}.json", ct));
 
-            var authors = await Task.WhenAll(authorTasks);
+                var authors = await Task.WhenAll(authorTasks);
+                
+                primaryAuthors = authors
+                    .Where(a => !string.IsNullOrEmpty(a?.Name))
+                    .Select(a => a!.Name!)
+                    .ToList();
+            }
             
-            return authors
-                .Where(a => !string.IsNullOrEmpty(a?.Name))
-                .Select(a => a!.Name!)
-                .ToList();
+            // Currently returning empty for contributors from Work record directly.
+            // Service layer will infer contributors by comparing Search Results (Editions aggregate) vs Work Record (Canonical).
+            return (primaryAuthors, new List<string>());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching primary authors for work {WorkKey}", workKey);
-            return new List<string>();
+            _logger.LogError(ex, "Error fetching author details for work {WorkKey}", workKey);
+            return (new List<string>(), new List<string>());
         }
     }
 

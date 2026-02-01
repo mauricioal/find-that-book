@@ -7,7 +7,7 @@ namespace FindThatBook.Api.Application.Services;
 
 public class BookMatcher : IBookMatcher
 {
-    public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate, bool isPrimaryAuthor)
+    public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate)
     {
         var normQueryTitle = Normalize(intent.Title ?? "");
         var normBookTitle = Normalize(candidate.Title);
@@ -16,10 +16,19 @@ public class BookMatcher : IBookMatcher
         bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle == normQueryTitle;
         bool nearMatchTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
         
-        bool authorMatch = !string.IsNullOrEmpty(normQueryAuthor) && candidate.Authors.Any(a => Normalize(a).Contains(normQueryAuthor));
         bool authorWasRequested = !string.IsNullOrEmpty(normQueryAuthor);
         
-        var authorStatus = authorMatch ? (isPrimaryAuthor ? AuthorStatus.Primary : AuthorStatus.Contributor) : AuthorStatus.Unknown;
+        // Check author match against hierarchy
+        bool isPrimaryMatch = authorWasRequested && candidate.PrimaryAuthors.Any(a => Normalize(a).Contains(normQueryAuthor));
+        bool isContributorMatch = !isPrimaryMatch && authorWasRequested && candidate.Contributors.Any(a => Normalize(a).Contains(normQueryAuthor));
+        bool isGeneralMatch = !isPrimaryMatch && !isContributorMatch && authorWasRequested && candidate.Authors.Any(a => Normalize(a).Contains(normQueryAuthor));
+        
+        var authorStatus = AuthorStatus.Unknown;
+        if (isPrimaryMatch) authorStatus = AuthorStatus.Primary;
+        else if (isContributorMatch) authorStatus = AuthorStatus.Contributor;
+        else if (isGeneralMatch) authorStatus = AuthorStatus.Contributor; // Fallback to lower signal if matched in general list but not primary
+
+        bool authorMatch = authorStatus != AuthorStatus.Unknown;
 
         // a. Exact title + primary author match (strongest) OR Exact Title Only (if no author requested)
         if (exactTitle && (authorStatus == AuthorStatus.Primary || !authorWasRequested))
