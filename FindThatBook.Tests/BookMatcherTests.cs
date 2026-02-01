@@ -26,10 +26,11 @@ public class BookMatcherTests
         };
 
         // Act
-        var result = _matcher.CalculateRank(intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(intent, candidate, isPrimaryAuthor: true);
 
         // Assert
-        result.Should().Be(MatchRank.StrongMatch);
+        result.Rank.Should().Be(MatchRank.StrongMatch);
+        result.Explanation.Should().Contain("Exact title match");
     }
 
     [Fact]
@@ -44,10 +45,11 @@ public class BookMatcherTests
         };
 
         // Act
-        var result = _matcher.CalculateRank(intent, candidate, isPrimaryAuthor: false);
+        var result = _matcher.CalculateMatch(intent, candidate, isPrimaryAuthor: false);
 
         // Assert
-        result.Should().Be(MatchRank.TitleAndContributorMatch);
+        result.Rank.Should().Be(MatchRank.TitleAndContributorMatch);
+        result.Explanation.Should().Contain("listed as a contributor");
     }
 
     [Fact]
@@ -62,10 +64,11 @@ public class BookMatcherTests
         };
 
         // Act
-        var result = _matcher.CalculateRank(intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(intent, candidate, isPrimaryAuthor: true);
 
         // Assert
-        result.Should().Be(MatchRank.NearMatch);
+        result.Rank.Should().Be(MatchRank.NearMatch);
+        result.Explanation.Should().Contain("partially matches");
     }
 
     [Fact]
@@ -80,9 +83,29 @@ public class BookMatcherTests
         };
 
         // Act
-        var result = _matcher.CalculateRank(intent, candidate, isPrimaryAuthor: true);
+        var result = _matcher.CalculateMatch(intent, candidate, isPrimaryAuthor: true);
 
         // Assert
-        result.Should().Be(MatchRank.AuthorOnlyFallback);
+        result.Rank.Should().Be(MatchRank.AuthorOnlyFallback);
+        result.Explanation.Should().Contain("Found via author match");
+    }
+
+    [Fact]
+    public void CalculateMatch_ShouldReturnStrongMatch_WhenTitleExactAndNoAuthorRequested()
+    {
+        // Arrange
+        var intent = new SearchIntent { Title = "The Hobbit", Author = null };
+        var candidate = new BookCandidate 
+        { 
+            Title = "The Hobbit", 
+            Authors = new List<string> { "J.R.R. Tolkien" } 
+        };
+
+        // Act
+        var result = _matcher.CalculateMatch(intent, candidate, isPrimaryAuthor: false); // isPrimary doesn't matter if author is null
+
+        // Assert
+        result.Rank.Should().Be(MatchRank.StrongMatch);
+        result.Explanation.Should().Contain("Exact title match");
     }
 }

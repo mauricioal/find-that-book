@@ -27,7 +27,10 @@ public class OpenLibraryClient : IOpenLibraryClient
         if (!queries.Any()) return Enumerable.Empty<BookCandidate>();
 
         var queryString = string.Join("&", queries);
+        _logger.LogInformation("OpenLibrary query: {QueryString}", queryString);
+
         var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>($"search.json?{queryString}&limit=10", ct);
+        _logger.LogInformation("OpenLibrary response: {Response}", response);
 
         if (response?.Docs == null) return Enumerable.Empty<BookCandidate>();
 

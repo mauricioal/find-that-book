@@ -37,18 +37,15 @@ public class BookSearchService : IBookSearchService
             var primaryAuthors = await _openLibraryClient.GetPrimaryAuthorsAsync(candidate.OpenLibraryId, ct);
             bool isPrimary = primaryAuthors.Any(pa => intent.Author != null && pa.Contains(intent.Author, StringComparison.OrdinalIgnoreCase));
             
-            candidate.Rank = _matcher.CalculateRank(intent, candidate, isPrimary);
+            var matchResult = _matcher.CalculateMatch(intent, candidate, isPrimary);
+            candidate.Rank = matchResult.Rank;
+            candidate.Explanation = matchResult.Explanation;
         }
 
-        // 4. Sort by Rank
-        var rankedCandidates = candidates
+        // 4. Sort by Rank and Return
+        return candidates
             .Where(c => c.Rank != Domain.Enums.MatchRank.None)
             .OrderByDescending(c => c.Rank)
             .Take(5);
-
-        // 5. AI refinement (Rank and Explain)
-        var results = await _aiService.RankAndExplainResultsAsync(query, rankedCandidates, ct);
-
-        return results;
     }
 }
