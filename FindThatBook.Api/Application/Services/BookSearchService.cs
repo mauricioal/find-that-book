@@ -43,9 +43,16 @@ public class BookSearchService : IBookSearchService
             candidate.AuthorStatus = matchResult.AuthorStatus;
         }
 
-        // 4. Sort by Rank
-        var rankedCandidates = candidates
+        // 4. Filter by Highest Rank found
+        var validCandidates = candidates
             .Where(c => c.Rank != Domain.Enums.MatchRank.None)
+            .ToList();
+
+        if (!validCandidates.Any()) return Enumerable.Empty<BookCandidate>();
+
+        var maxRank = validCandidates.Max(c => c.Rank);
+        var rankedCandidates = validCandidates
+            .Where(c => c.Rank == maxRank)
             .OrderByDescending(c => c.Rank)
             .Take(5)
             .ToList();
