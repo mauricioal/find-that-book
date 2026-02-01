@@ -3,9 +3,9 @@ using FindThatBook.Api.Domain.Enums;
 
 namespace FindThatBook.Api.Application.Interfaces;
 
-public record MatchResult(MatchRank Rank, string Explanation);
+public record MatchResult(MatchRank Rank, FindThatBook.Api.Domain.Enums.MatchType MatchType, AuthorStatus AuthorStatus);
 
 public interface IBookMatcher
 {
-    MatchResult CalculateMatch(SearchIntent intent, BookCandidate candidate, bool isPrimaryAuthor);
+    MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate, bool isPrimaryAuthor);
 }

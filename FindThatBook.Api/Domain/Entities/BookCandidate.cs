@@ -11,4 +11,8 @@ public class BookCandidate
     public string? CoverUrl { get; set; }
     public string Explanation { get; set; } = string.Empty;
     public MatchRank Rank { get; set; } = MatchRank.None;
+    
+    // Technical metadata for AI grounding
+    public FindThatBook.Api.Domain.Enums.MatchType MatchType { get; set; } = Domain.Enums.MatchType.None;
+    public AuthorStatus AuthorStatus { get; set; } = AuthorStatus.Unknown;
 }

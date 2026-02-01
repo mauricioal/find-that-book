@@ -61,16 +61,32 @@ public class GeminiAiService : IAiService
     {
         if (!candidates.Any()) return candidates;
 
-        var candidatesJson = JsonSerializer.Serialize(candidates);
-        var prompt = $"""
-            A user is searching for a book using this query: "{rawQuery}"
-            Below is a list of potential matches from a library database.
-            Please re-order these matches by relevance (best match first) and provide a concise one-sentence explanation for EACH match, citing why it fits the query (e.g., "Exact title match", "Matches author and partial title").
+        var candidatesData = candidates.Select(c => new 
+        {
+            c.Title,
+            Authors = string.Join(", ", c.Authors),
+            c.FirstPublishYear,
+            c.MatchType,
+            c.AuthorStatus
+        });
+
+        var prompt = $$"""
+            You are a helpful librarian. A user is searching for a book with this query: "{{rawQuery}}".
             
-            Return ONLY the updated list in the same JSON format as the input.
+            Below is a list of results matched by our system. Your task is to provide a concise (1-2 sentences) explanation for EACH result, explaining "why this book" based on the technical match data provided.
+            
+            ### Grounding Rules:
+            - If MatchType is 'ExactTitle', explicitly state that the title matched exactly.
+            - If MatchType is 'NearMatchTitle', state that the title is a partial or fuzzy match.
+            - If AuthorStatus is 'Primary', mention they are the primary author.
+            - If AuthorStatus is 'Contributor', mention they are a contributor (illustrator, editor, etc).
+            - Always cite the specific fields that matched.
+            
+            ### Output Format:
+            Return ONLY a JSON array of objects, where each object has all the original fields PLUS the "Explanation" field.
             
             Candidates:
-            {candidatesJson}
+            {{JsonSerializer.Serialize(candidatesData)}}
             """;
 
         var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
@@ -78,12 +94,28 @@ public class GeminiAiService : IAiService
 
         try 
         {
-            return JsonSerializer.Deserialize<List<BookCandidate>>(content, _jsonOptions) ?? candidates;
+            // We only need the explanations back to merge them with our rich candidate objects
+            var explainedItems = JsonSerializer.Deserialize<List<ExplainedCandidate>>(content, _jsonOptions);
+            
+            var candidateList = candidates.ToList();
+            if (explainedItems != null)
+            {
+                for (int i = 0; i < candidateList.Count && i < explainedItems.Count; i++)
+                {
+                    candidateList[i].Explanation = explainedItems[i].Explanation;
+                }
+            }
+            return candidateList;
         }
         catch
         {
             return candidates;
         }
+    }
+
+    private class ExplainedCandidate
+    {
+        public string Explanation { get; set; } = string.Empty;
     }
 
     private static string CleanLlmJson(string? content)
