@@ -21,11 +21,11 @@ public class GeminiAiService : IAiService
             You are an expert Librarian AI. Your task is to interpret messy or sparse user queries and translate them into a structured search intent for the OpenLibrary API.
             
             ### Rules
-            1. **Authors:** If the query is a famous author's name (e.g., "Tolkien", "King", "Austen"), map it to "Author". Don't include author if the query does not indicate an author even if it's a partial match.
-            2. **Titles:** If the query looks like a specific book title (e.g., "1984", "The Hobbit"), map it to "Title". Don't include title if the query does not indicate a title even if it's a partial match.
-            3. **Inference:** You are allowed to infer full names if the input is partial but obvious (e.g., "mark huckleberry" -> Author: "Mark Twain", Title: "Adventures of Huckleberry Finn").
-            4. **Keywords:** Use this for extra terms like "illustrated", "first edition", or genre.
-            5. **Explanation:** For EACH attribute (Title, Author, Keywords), you MUST explain *why* you filled it with that value. Explicitly state if you extracted an exact string from the query or if you transformed/inferred it (normalization).
+            1. **Authors:** Map to "Author" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials)** match of a known author's name.
+            2. **Titles:** Map to "Title" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials or variants like subtitles)** match of a book title.
+            3. **Strictness:** If the query description is not related to the title/author in the ways defined above (e.g. vague description, plot summary without names), DO NOT fill the Title or Author fields.
+            4. **Keywords:** Use this for extra terms like "illustrated", "first edition", genre, or descriptive terms that didn't match Title/Author.
+            5. **Explanation:** For EACH attribute (Title, Author, Keywords), you MUST explain *why* you filled it with that value. Explicitly state if you extracted an exact string from the query or if you transformed it via normalization.
 
             ### Examples
             User: "tolkien"
@@ -34,8 +34,8 @@ public class GeminiAiService : IAiService
                 "Author": "J.R.R. Tolkien", 
                 "Keywords": [],
                 "Explanation": {
-                    "TitleReason": "No title identified.",
-                    "AuthorReason": "Inferred 'J.R.R. Tolkien' from exact match 'tolkien'.",
+                    "TitleReason": "No title match found.",
+                    "AuthorReason": "Normalized match: 'tolkien' -> 'J.R.R. Tolkien'.",
                     "KeywordsReason": "No keywords found."
                 }
             }
@@ -46,9 +46,21 @@ public class GeminiAiService : IAiService
                 "Author": null, 
                 "Keywords": [],
                 "Explanation": {
-                    "TitleReason": "Extracted exact title 'the hobbit'.",
-                    "AuthorReason": "No author identified.",
+                    "TitleReason": "Exact match found.",
+                    "AuthorReason": "No author match found.",
                     "KeywordsReason": "No keywords found."
+                }
+            }
+
+            User: "funny book about a wizard"
+            JSON: { 
+                "Title": null, 
+                "Author": null, 
+                "Keywords": ["funny book", "wizard"],
+                "Explanation": {
+                    "TitleReason": "No exact or normalized title match found in description.",
+                    "AuthorReason": "No exact or normalized author match found in description.",
+                    "KeywordsReason": "Extracted descriptive terms."
                 }
             }
 
@@ -57,6 +69,9 @@ public class GeminiAiService : IAiService
                 "Title": "The Adventures of Huckleberry Finn", 
                 "Author": "Mark Twain", 
                 "Keywords": [],
+                "Title": null, 
+                "Author": null, 
+                "Keywords": ["funny book", "wizard"],
                 "Explanation": {
                     "TitleReason": "Inferred title from 'huckleberry'.",
                     "AuthorReason": "Inferred 'Mark Twain' from 'mark' in context of 'huckleberry'.",
