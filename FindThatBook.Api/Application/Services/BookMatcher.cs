@@ -21,19 +21,6 @@ public class BookMatcher : IBookMatcher
         
         var authorStatus = authorMatch ? (isPrimaryAuthor ? AuthorStatus.Primary : AuthorStatus.Contributor) : AuthorStatus.Unknown;
 
-        // VERIFICATION: Check against Raw Query to catch typos or partials
-        // If the Intent says "Exact", but the Raw Query doesn't contain the core title, downgrade it.
-        if (exactTitle)
-        {
-            var coreTitle = GetCoreTitle(candidate.Title);
-            var normalizedRaw = Normalize(rawQuery);
-            if (!normalizedRaw.Contains(coreTitle))
-            {
-                exactTitle = false;
-                nearMatchTitle = true; // Downgrade to Near Match (Typo/Partial)
-            }
-        }
-
         // a. Exact title + primary author match (strongest) OR Exact Title Only (if no author requested)
         if (exactTitle && (authorStatus == AuthorStatus.Primary || !authorWasRequested))
         {

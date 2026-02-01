@@ -21,7 +21,7 @@ public class GeminiAiService : IAiService
             You are an expert Librarian AI. Your task is to interpret messy or sparse user queries and translate them into a structured search intent for the OpenLibrary API.
             
             ### Rules
-            1. **Authors:** Map to "Author" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials)** match of a known author's name.
+            1. **Authors:** Map to "Author" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials)** match of a known author's name or any name (or last name) not related to the title or plot.
             2. **Titles:** Map to "Title" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials or variants like subtitles)** match of a book title.
             3. **Strictness:** If the query description is not related to the title/author in the ways defined above (e.g. vague description, plot summary without names), DO NOT fill the Title or Author fields.
             4. **Keywords:** Use this for extra terms like "illustrated", "first edition", genre, or descriptive terms that didn't match Title/Author.
