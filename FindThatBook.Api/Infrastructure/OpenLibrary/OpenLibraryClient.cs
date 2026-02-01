@@ -44,7 +44,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         });
     }
 
-    public async Task<List<string>> GetPrimaryAuthorsAsync(string workKey, CancellationToken ct = default)
+    public async Task<List<string>> GetWorkAuthorsAsync(string workKey, CancellationToken ct = default)
     {
         try
         {
@@ -65,7 +65,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching primary authors for work {WorkKey}", workKey);
+            _logger.LogError(ex, "Error fetching authors for work {WorkKey}", workKey);
             return new List<string>();
         }
     }

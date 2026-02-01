@@ -17,7 +17,7 @@ public class BookMatcherTests
     [Fact]
     public void CalculateMatch_ShouldReturnStrongMatch_WhenTitleExactAndPrimaryAuthorMatches()
     {
-        // Arrange
+        // Strict: "the hobbit" matches "The Hobbit"
         var rawQuery = "The Hobbit Tolkien";
         var intent = new SearchIntent { Title = "The Hobbit", Author = "Tolkien" };
         var candidate = new BookCandidate 
@@ -26,31 +26,44 @@ public class BookMatcherTests
             Authors = new List<string> { "J.R.R. Tolkien" } 
         };
 
-        // Act
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
 
-        // Assert
         result.Rank.Should().Be(MatchRank.StrongMatch);
         result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle);
-        result.AuthorStatus.Should().Be(AuthorStatus.Primary);
+    }
+
+    [Fact]
+    public void CalculateMatch_ShouldReturnNearMatch_WhenArticleMissingInRawQuery()
+    {
+        // Strict: "hobbit" does NOT match "The Hobbit" exactly
+        var rawQuery = "Hobbit Tolkien";
+        var intent = new SearchIntent { Title = "The Hobbit", Author = "Tolkien" };
+        var candidate = new BookCandidate 
+        { 
+            Title = "The Hobbit", 
+            Authors = new List<string> { "J.R.R. Tolkien" } 
+        };
+
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
+
+        // Should be NearMatch because "The" is missing
+        result.Rank.Should().Be(MatchRank.NearMatch);
+        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
     }
 
     [Fact]
     public void CalculateMatch_ShouldReturnTitleAndContributorMatch_WhenTitleExactButAuthorIsNotPrimary()
     {
-        // Arrange
         var rawQuery = "The Hobbit Tolkien";
         var intent = new SearchIntent { Title = "The Hobbit", Author = "Tolkien" };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Authors = new List<string> { "Christopher Tolkien" } // Contributor/Editor
         };
 
-        // Act
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false);
 
-        // Assert
         result.Rank.Should().Be(MatchRank.TitleAndContributorMatch);
         result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle);
         result.AuthorStatus.Should().Be(AuthorStatus.Contributor);
@@ -59,27 +72,23 @@ public class BookMatcherTests
     [Fact]
     public void CalculateMatch_ShouldReturnNearMatch_WhenTitlePartialAndAuthorMatches()
     {
-        // Arrange
-        var rawQuery = "Hobbit Tolkien";
-        var intent = new SearchIntent { Title = "Hobbit", Author = "Tolkien" }; 
+        var rawQuery = "Huckleberry Twain"; 
+        var intent = new SearchIntent { Title = "Huckleberry Finn", Author = "Twain" };
         var candidate = new BookCandidate 
         { 
-            Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
+            Title = "The Adventures of Huckleberry Finn", 
+            Authors = new List<string> { "Mark Twain" } 
         };
 
-        // Act
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
 
-        // Assert
         result.Rank.Should().Be(MatchRank.NearMatch);
         result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
     }
 
     [Fact]
-    public void CalculateMatch_ShouldReturnAuthorOnlyFallback_WhenTitleDoesNotMatchButAuthorDoes()
+    public void CalculateMatch_ShouldReturnAuthorOnly_WhenTitleMismatch()
     {
-        // Arrange
         var rawQuery = "Tolkien";
         var intent = new SearchIntent { Title = "", Author = "Tolkien" };
         var candidate = new BookCandidate 
@@ -88,32 +97,10 @@ public class BookMatcherTests
             Authors = new List<string> { "J.R.R. Tolkien" } 
         };
 
-        // Act
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: true);
 
-        // Assert
         result.Rank.Should().Be(MatchRank.AuthorOnlyFallback);
         result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.AuthorOnly);
-    }
-
-    [Fact]
-    public void CalculateMatch_ShouldReturnStrongMatch_WhenTitleExactAndNoAuthorRequested()
-    {
-        // Arrange
-        var rawQuery = "The Hobbit";
-        var intent = new SearchIntent { Title = "The Hobbit", Author = null };
-        var candidate = new BookCandidate 
-        { 
-            Title = "The Hobbit", 
-            Authors = new List<string> { "J.R.R. Tolkien" } 
-        };
-
-        // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false); 
-
-        // Assert
-        result.Rank.Should().Be(MatchRank.StrongMatch);
-        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle);
     }
 
     // --- NEW TESTS FOR TYPO / RAW QUERY LOGIC ---
@@ -134,16 +121,18 @@ public class BookMatcherTests
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false);
 
         // Assert
-        result.Rank.Should().Be(MatchRank.NearMatch); // Should be downgraded
+        // Since Author is null, and Title is a typo (Partial), it falls to TitleMatchOnly (Rank 1)
+        // It cannot be NearMatch (Rank 3) because Requirement 4c says NearMatch requires Author Match.
+        result.Rank.Should().Be(MatchRank.TitleMatchOnly);
         result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
     }
 
     [Fact]
-    public void CalculateMatch_ShouldMaintainExactMatch_WhenRawQueryContainsCoreTitle()
+    public void CalculateMatch_ShouldReturnTitleMatchOnly_WhenAuthorDoesNotMatch()
     {
         // Arrange
-        var rawQuery = "read the hobbit please"; // Noise, but exact title is present
-        var intent = new SearchIntent { Title = "The Hobbit", Author = null };
+        var rawQuery = "The Hobbit King"; // Wrong Author (Stephen King?)
+        var intent = new SearchIntent { Title = "The Hobbit", Author = "King" }; 
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -154,28 +143,8 @@ public class BookMatcherTests
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false);
 
         // Assert
-        result.Rank.Should().Be(MatchRank.StrongMatch); // Exact title was found in the noise
-        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle);
-    }
-
-    [Fact]
-    public void CalculateMatch_ShouldDowngradeToNearMatch_WhenPartialTitleOnly()
-    {
-        // Arrange
-        var rawQuery = "huckleberry"; // Partial
-        var intent = new SearchIntent { Title = "The Adventures of Huckleberry Finn", Author = null }; // AI inferred full title
-        var candidate = new BookCandidate 
-        { 
-            Title = "The Adventures of Huckleberry Finn", 
-            Authors = new List<string> { "Mark Twain" } 
-        };
-
-        // Act
-        var result = _matcher.CalculateMatch(rawQuery, intent, candidate, isPrimaryAuthor: false);
-
-        // Assert
-        // "huckleberry" does NOT contain "adventures huckleberry finn" (core title)
-        result.Rank.Should().Be(MatchRank.NearMatch); 
-        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
+        result.Rank.Should().Be(MatchRank.TitleMatchOnly);
+        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle); // Title matched exactly
+        result.AuthorStatus.Should().Be(AuthorStatus.Unknown);
     }
 }

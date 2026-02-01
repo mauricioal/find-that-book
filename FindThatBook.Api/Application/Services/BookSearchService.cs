@@ -31,28 +31,24 @@ public class BookSearchService : IBookSearchService
         // 2. Search OpenLibrary
         var candidates = (await _openLibraryClient.SearchBooksAsync(intent, ct)).ToList();
 
-        // 3. Resolve Primary Authors and Apply Hierarchy
+        // 3. Enrich Candidates with ALL Authors
         foreach (var candidate in candidates)
         {
-            var primaryAuthors = await _openLibraryClient.GetPrimaryAuthorsAsync(candidate.OpenLibraryId, ct);
-            bool isPrimary = primaryAuthors.Any(pa => intent.Author != null && pa.Contains(intent.Author, StringComparison.OrdinalIgnoreCase));
-            
-            var matchResult = _matcher.CalculateMatch(query, intent, candidate, isPrimary);
-            candidate.Rank = matchResult.Rank;
-            candidate.MatchType = matchResult.MatchType;
-            candidate.AuthorStatus = matchResult.AuthorStatus;
+            candidate.Authors = await _openLibraryClient.GetWorkAuthorsAsync(candidate.OpenLibraryId, ct);
         }
 
-        // 4. Sort by Rank
-        var rankedCandidates = candidates
+        // 4. Resolve Primary Authors, Apply Hierarchy, and Rank via AI
+        // This addresses Requirement 2a (extract info) and 2b (explanations)
+        var rankedResults = await _aiService.ResolveAuthorsAndRankAsync(query, candidates, ct);
+
+        // 5. Filter to Top Rank Only (Requirement 4e)
+        var bestRankFound = rankedResults
             .Where(c => c.Rank != Domain.Enums.MatchRank.None)
-            .OrderByDescending(c => c.Rank)
+            .MaxBy(c => c.Rank)?.Rank ?? Domain.Enums.MatchRank.None;
+
+        return rankedResults
+            .Where(c => c.Rank == bestRankFound && c.Rank != Domain.Enums.MatchRank.None)
             .Take(5)
             .ToList();
-
-        // 5. AI Generation of grounded explanations
-        var results = await _aiService.RankAndExplainResultsAsync(query, rankedCandidates, ct);
-
-        return results;
     }
 }

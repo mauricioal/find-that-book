@@ -5,7 +5,8 @@ public enum MatchType
     None = 0,
     ExactTitle = 1,
     NearMatchTitle = 2,
-    AuthorOnly = 3
+    AuthorOnly = 3,
+    TitleOnly = 4 // New metadata type
 }
 
 public enum AuthorStatus

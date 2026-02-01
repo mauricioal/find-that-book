@@ -8,11 +8,13 @@ namespace FindThatBook.Api.Infrastructure.AI;
 public class GeminiAiService : IAiService
 {
     private readonly IChatClient _chatClient;
+    private readonly ILogger<GeminiAiService> _logger;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public GeminiAiService(IChatClient chatClient)
+    public GeminiAiService(IChatClient chatClient, ILogger<GeminiAiService> logger)
     {
         _chatClient = chatClient;
+        _logger = logger;
     }
 
     public async Task<SearchIntent> ExtractSearchIntentAsync(string rawQuery, CancellationToken ct = default)
@@ -57,55 +59,78 @@ public class GeminiAiService : IAiService
         }
     }
 
-    public async Task<IEnumerable<BookCandidate>> RankAndExplainResultsAsync(string rawQuery, IEnumerable<BookCandidate> candidates, CancellationToken ct = default)
+    public async Task<IEnumerable<BookCandidate>> ResolveAuthorsAndRankAsync(string rawQuery, IEnumerable<BookCandidate> candidates, CancellationToken ct = default)
     {
         if (!candidates.Any()) return candidates;
 
-        var candidatesData = candidates.Select(c => new 
-        {
-            c.Title,
-            Authors = string.Join(", ", c.Authors),
-            c.FirstPublishYear,
-            c.MatchType,
-            c.AuthorStatus
-        });
-
         var prompt = $$"""
-            You are a helpful librarian. A user is searching for a book with this query: "{{rawQuery}}".
+            You are an expert Librarian AI. A user is searching for a book with this query: "{{rawQuery}}".
             
-            Below is a list of results matched by our system. Your task is to provide a concise (1-2 sentences) explanation for EACH result, explaining "why this book" based on the technical match data provided.
+            Below is a list of candidate books found in our database. Each book includes a list of authors/contributors fetched from the API.
             
-            ### Grounding Rules:
-            - If MatchType is 'ExactTitle', explicitly state that the title matched exactly.
-            - If MatchType is 'NearMatchTitle', state that the title is a partial or fuzzy match.
-            - If AuthorStatus is 'Primary', you may mention the author for context (e.g., "written by..."), but only cite them as a "match reason" if the query seems to include an author name.
-            - If AuthorStatus is 'Contributor', mention they are a contributor (illustrator, editor, etc).
-            - Always cite the specific fields that matched.
-            
-            ### Output Format:
-            Return ONLY a JSON array of objects, where each object has all the original fields PLUS the "Explanation" field.
+            ### Your Tasks:
+            1. **Identify Primary Author:** Use your knowledge to determine who the primary author(s) of each work are. Differentiate them from contributors like adaptors, illustrators, or editors.
+            2. **Categorize Match:** Assign a MatchRank (5, 4, 3, 2, 1) and MatchType to each book based on the following Hierarchy:
+               - **Rank 5 (StrongMatch / ExactTitle):** The user's query contains the EXACT or NORMALIZED title AND the PRIMARY author matches.
+               - **Rank 4 (TitleAndContributorMatch / ExactTitle):** The user's query contains the EXACT or NORMALIZED title AND the PRIMARY author doesn't match, but a CONTRIBUTOR (adaptor, illustrator) does.
+               - **Rank 3 (NearMatch / NearMatchTitle):** The title matches partially AND the author (primary or contributor) matches.
+               - **Rank 2 (AuthorOnlyFallback / AuthorOnly):** Only the author matches (primary or contributor). Return top works by that author.
+               - **Rank 1 (TitleMatchOnly / TitleOnly):** The title matches (exact or partial), but the author does NOT match.
+            3. **Explain:** Generate a concise 1-2 sentence explanation. State clearly who the primary author is and if the user matched a contributor instead. Cite specific fields (Title, Author). **Explanation MUST NOT be empty.**
+
+            ### Rules:
+            - **Strict Normalization:** For Rank 5 and 4, the core title words must be present in the user query. "hobbit" is NOT an exact match for "The Hobbit".
+            - **Grounding:** Your explanation MUST be grounded in the data provided.
+
+            ### Output:
+            Return ONLY a JSON array of objects with these fields:
+            - "Title" (string)
+            - "Rank" (int)
+            - "MatchType" (string)
+            - "AuthorStatus" (string): MUST be one of ["Primary", "Contributor", "Unknown"]
+            - "Explanation" (string)
             
             Candidates:
-            {{JsonSerializer.Serialize(candidatesData)}}
+            {{JsonSerializer.Serialize(candidates.Select(c => new { c.Title, c.Authors, c.FirstPublishYear }))}}
             """;
 
         var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
         var content = CleanLlmJson(response.Text);
+        _logger.LogInformation("AI Ranking Response: {Content}", content);
 
         try 
         {
-            // We only need the explanations back to merge them with our rich candidate objects
-            var explainedItems = JsonSerializer.Deserialize<List<ExplainedCandidate>>(content, _jsonOptions);
+            var resolvedItems = JsonSerializer.Deserialize<List<ResolvedCandidate>>(content, _jsonOptions);
             
             var candidateList = candidates.ToList();
-            if (explainedItems != null)
+            var results = new List<BookCandidate>();
+
+            if (resolvedItems != null)
             {
-                for (int i = 0; i < candidateList.Count && i < explainedItems.Count; i++)
+                foreach (var resolved in resolvedItems)
                 {
-                    candidateList[i].Explanation = explainedItems[i].Explanation;
+                    var original = candidateList.FirstOrDefault(c => c.Title == resolved.Title);
+                    if (original != null)
+                    {
+                        original.Rank = (Domain.Enums.MatchRank)resolved.Rank;
+                        
+                        if (Enum.TryParse<Domain.Enums.MatchType>(resolved.MatchType, true, out var matchType))
+                            original.MatchType = matchType;
+                            
+                        if (Enum.TryParse<Domain.Enums.AuthorStatus>(resolved.AuthorStatus, true, out var authorStatus))
+                            original.AuthorStatus = authorStatus;
+                        else
+                            original.AuthorStatus = Domain.Enums.AuthorStatus.Unknown; // Fallback
+
+                        original.Explanation = !string.IsNullOrWhiteSpace(resolved.Explanation) 
+                            ? resolved.Explanation 
+                            : $"Match found for '{original.Title}' (Rank: {original.Rank}).";
+                            
+                        results.Add(original);
+                    }
                 }
             }
-            return candidateList;
+            return results.Any() ? results : candidates;
         }
         catch
         {
@@ -113,8 +138,12 @@ public class GeminiAiService : IAiService
         }
     }
 
-    private class ExplainedCandidate
+    private class ResolvedCandidate
     {
+        public string Title { get; set; } = string.Empty;
+        public int Rank { get; set; }
+        public string MatchType { get; set; } = string.Empty;
+        public string AuthorStatus { get; set; } = string.Empty;
         public string Explanation { get; set; } = string.Empty;
     }
 

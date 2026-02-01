@@ -9,70 +9,69 @@ public class BookMatcher : IBookMatcher
 {
     public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate, bool isPrimaryAuthor)
     {
+        // STRICT Normalization: No article/word removal, just case and punctuation.
         var normQueryTitle = Normalize(intent.Title ?? "");
         var normBookTitle = Normalize(candidate.Title);
         var normQueryAuthor = Normalize(intent.Author ?? "");
-        
-        bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle == normQueryTitle;
-        bool nearMatchTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
-        
-        bool authorMatch = !string.IsNullOrEmpty(normQueryAuthor) && candidate.Authors.Any(a => Normalize(a).Contains(normQueryAuthor));
-        bool authorWasRequested = !string.IsNullOrEmpty(normQueryAuthor);
-        
-        var authorStatus = authorMatch ? (isPrimaryAuthor ? AuthorStatus.Primary : AuthorStatus.Contributor) : AuthorStatus.Unknown;
+        var normRawQuery = Normalize(rawQuery);
 
-        // VERIFICATION: Check against Raw Query to catch typos or partials
-        // If the Intent says "Exact", but the Raw Query doesn't contain the core title, downgrade it.
-        if (exactTitle)
+        // Title Matching Logic
+        bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle == normQueryTitle;
+        bool partialTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
+
+        // Verification: Even if Intent says "Exact", checks if the RAW query actually contains the full title token
+        // Strict: "hobbit" is NOT "the hobbit".
+        if (exactTitle && !normRawQuery.Contains(normBookTitle))
         {
-            var coreTitle = GetCoreTitle(candidate.Title);
-            var normalizedRaw = Normalize(rawQuery);
-            if (!normalizedRaw.Contains(coreTitle))
-            {
-                exactTitle = false;
-                nearMatchTitle = true; // Downgrade to Near Match (Typo/Partial)
-            }
+            exactTitle = false;
+            partialTitle = true;
         }
 
-        // a. Exact title + primary author match (strongest) OR Exact Title Only (if no author requested)
-        if (exactTitle && (authorStatus == AuthorStatus.Primary || !authorWasRequested))
+        // Author Matching Logic
+        bool authorMatch = !string.IsNullOrEmpty(normQueryAuthor) && candidate.Authors.Any(a => Normalize(a).Contains(normQueryAuthor));
+        var authorStatus = authorMatch ? (isPrimaryAuthor ? AuthorStatus.Primary : AuthorStatus.Contributor) : AuthorStatus.Unknown;
+
+        // 4a. Exact/normalized title + primary author match (strongest)
+        if (exactTitle && authorStatus == AuthorStatus.Primary)
         {
             return new MatchResult(MatchRank.StrongMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
         }
 
-        // b. Exact title + contributor-only author
+        // 4b. Exact/normalized title + contributor-only author (lower rank)
         if (exactTitle && authorStatus == AuthorStatus.Contributor)
         {
             return new MatchResult(MatchRank.TitleAndContributorMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
         }
 
-        // c. Near-match title + author match OR Near-match title (if no author requested)
-        if (nearMatchTitle && (authorMatch || !authorWasRequested))
+        // 4c. Near-match title + author match (candidate)
+        // Title matches partially AND does the author (either primary or contributor)
+        if (partialTitle && authorMatch)
         {
             return new MatchResult(MatchRank.NearMatch, FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle, authorStatus);
         }
 
-        // d. Author-only fallback
-        if (authorMatch && string.IsNullOrEmpty(normQueryTitle))
+        // 4d. Author-only fallback -> return top works by that author
+        if (authorMatch && !exactTitle && !partialTitle)
         {
             return new MatchResult(MatchRank.AuthorOnlyFallback, FindThatBook.Api.Domain.Enums.MatchType.AuthorOnly, authorStatus);
         }
 
+        // 4e. Title-only fallback (New lowest rank)
+        // Title matches (Exact or Partial), but Author does NOT match.
+        if ((exactTitle || partialTitle) && !authorMatch)
+        {
+            var type = exactTitle ? FindThatBook.Api.Domain.Enums.MatchType.ExactTitle : FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle;
+            return new MatchResult(MatchRank.TitleMatchOnly, type, AuthorStatus.Unknown);
+        }
+
+        // Default: No valid match category found
         return new MatchResult(MatchRank.None, FindThatBook.Api.Domain.Enums.MatchType.None, AuthorStatus.Unknown);
     }
 
     private string Normalize(string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        // Strictly remove punctuation, keep all words including "the", "a", etc.
         return Regex.Replace(input.ToLowerInvariant(), @"[^\w\s]", "").Trim();
-    }
-
-    private string GetCoreTitle(string title)
-    {
-        // Simple core title extractor: lowercase, remove special chars, remove "the", "a"
-        var norm = Normalize(title);
-        var words = norm.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                        .Where(w => w != "the" && w != "a" && w != "an" && w != "of");
-        return string.Join(" ", words);
     }
 }
