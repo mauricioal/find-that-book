@@ -13,11 +13,12 @@ public class BookMatcher : IBookMatcher
     /// <inheritdoc />
     public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate)
     {
-        var normQueryTitle = Normalize(intent.Title ?? "");
-        var normBookTitle = Normalize(candidate.Title);
+        var normQueryTitle = CleanFunctionWords(intent.Title ?? "");
+        var normBookTitle = CleanFunctionWords(candidate.Title);
         var normQueryAuthor = Normalize(intent.Author ?? "");
         
         bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle == normQueryTitle;
+        //TODO: Improve near-match logic using the rawQuery and candidate.Title
         bool nearMatchTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
         
         bool authorWasRequested = !string.IsNullOrEmpty(normQueryAuthor);
@@ -34,28 +35,37 @@ public class BookMatcher : IBookMatcher
 
         bool authorMatch = authorStatus != AuthorStatus.Unknown;
 
-        // a. Exact title + primary author match (strongest) OR Exact Title Only (if no author requested)
-        if (exactTitle && (authorStatus == AuthorStatus.Primary || !authorWasRequested))
+        // a. Exact title + primary author match (strongest)
+        if (exactTitle && authorStatus == AuthorStatus.Primary && authorWasRequested)
         {
             return new MatchResult(MatchRank.StrongMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
         }
 
         // b. Exact title + contributor-only author
-        if (exactTitle && authorStatus == AuthorStatus.Contributor)
+        if (exactTitle && authorStatus == AuthorStatus.Contributor && authorWasRequested)
         {
             return new MatchResult(MatchRank.TitleAndContributorMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
         }
 
-        // c. Near-match title + author match OR Near-match title (if no author requested)
-        if (nearMatchTitle && (authorMatch || !authorWasRequested))
+        // c. Near-match title + author match
+        if (nearMatchTitle && authorMatch)
         {
             return new MatchResult(MatchRank.NearMatch, FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle, authorStatus);
         }
 
-        // d. Author-only fallback
+        // d. Author-only fallback (no title matched or requested)
         if (authorMatch && string.IsNullOrEmpty(normQueryTitle))
         {
             return new MatchResult(MatchRank.AuthorOnlyFallback, FindThatBook.Api.Domain.Enums.MatchType.AuthorOnly, authorStatus);
+        }
+
+        // e. Title-only fallback (No author requested)
+        if ((exactTitle || nearMatchTitle) && !authorWasRequested)
+        {
+            var matchType = exactTitle ? FindThatBook.Api.Domain.Enums.MatchType.ExactTitle : FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle;
+            // Using TitleOnly as the rank is low, but keeping the specific match type for UI/AI explanation if needed.
+            // Actually, the Enum has TitleOnly, so we should use it if we want to be strict.
+            return new MatchResult(MatchRank.TitleOnlyFallback, FindThatBook.Api.Domain.Enums.MatchType.TitleOnly, AuthorStatus.Unknown);
         }
 
         return new MatchResult(MatchRank.None, FindThatBook.Api.Domain.Enums.MatchType.None, AuthorStatus.Unknown);
@@ -70,6 +80,14 @@ public class BookMatcher : IBookMatcher
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
         return Regex.Replace(input.ToLowerInvariant(), @"[^\w\s]", "").Trim();
+    }
+
+    private string CleanFunctionWords(string input)
+    {
+        var norm = Normalize(input);
+        var words = norm.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Where(w => w != "the" && w != "a" && w != "an" && w != "of");
+        return string.Join(" ", words);
     }
 
 }
