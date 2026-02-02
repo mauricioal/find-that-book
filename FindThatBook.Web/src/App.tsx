@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Container, Row, Col, Form, Button, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Search, BookOpen, User, Calendar, ExternalLink } from 'lucide-react';
 import type { BookCandidate } from './types';
+import { CONFIG } from './config/constants';
 
 function App() {
   const [query, setQuery] = useState('');
@@ -20,7 +21,7 @@ function App() {
     setSearched(true);
 
     try {
-      const response = await fetch(`http://localhost:5249/api/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`${CONFIG.API_BASE_URL}/search?query=${encodeURIComponent(query)}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch results. Please try again.');
@@ -134,7 +135,7 @@ function App() {
                     </div>
 
                     <a 
-                      href={`https://openlibrary.org${book.openLibraryId}`} 
+                      href={`${CONFIG.OPENLIBRARY_URL}${book.openLibraryId}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"

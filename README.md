@@ -12,6 +12,8 @@ A smart library discovery service that uses Google Gemini AI to interpret messy 
 
 #### Local Development
 **Security Warning:** Never commit your API keys to version control.
+
+##### 1. API Key Setup
 1.  Navigate to the `FindThatBook.Api` directory.
 2.  Open `appsettings.Development.json`.
 3.  Replace the placeholder with your actual API key:
@@ -19,18 +21,31 @@ A smart library discovery service that uses Google Gemini AI to interpret messy 
     "Gemini": {
       "ApiKey": "YOUR_REAL_API_KEY_HERE"
     }
-##### OR (User Secrets)
-1.  Navigate to the `FindThatBook.Api` directory:
-    ```bash
-    cd FindThatBook.Api
     ```
-2.  Initialize User Secrets:
+**OR (User Secrets)**
+1.  Initialize User Secrets:
     ```bash
     dotnet user-secrets init
     ```
-3.  Set your Gemini API key:
+2.  Set your Gemini API key:
     ```bash
     dotnet user-secrets set "Gemini:ApiKey" "YOUR_REAL_API_KEY_HERE"
+    ```
+
+##### 2. Synchronize Localhost URLs
+To allow the frontend and backend to communicate, ensure their URLs are correctly mapped:
+
+*   **Backend (CORS & Swagger):**
+    Open `FindThatBook.Api/appsettings.json` and verify the `ExternalServices` section matches your local frontend port (default: 5173):
+    ```json
+    "ExternalServices": {
+      "Frontend": { "BaseUrl": "http://localhost:5173" }
+    }
+    ```
+*   **Frontend (API Endpoint):**
+    Open `FindThatBook.Web/.env` and verify it points to your backend API URL (default: 5249):
+    ```env
+    VITE_API_BASE_URL=http://localhost:5249/api
     ```
 
 #### Production (Environment Variables)
