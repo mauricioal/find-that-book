@@ -23,13 +23,23 @@ public class SearchController : ControllerBase
     }
 
     /// <summary>
-    /// Searches for books based on a user query string.
+    /// Searches for books based on a fuzzy user query.
     /// </summary>
-    /// <param name="query">The search query (e.g., "fantasy books by tolkien").</param>
-    /// <param name="ct">A cancellation token to cancel the request.</param>
-    /// <returns>An HTTP response containing the search results or an error message.</returns>
+    /// <remarks>
+    /// This endpoint uses Gemini AI to extract intent from the query, 
+    /// then searches OpenLibrary and ranks the results using a deterministic matcher.
+    /// </remarks>
+    /// <param name="query">The messy search query (e.g., "blue book about magic by sanderson"). Max 250 characters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of up to 5 ranked book candidates with AI-generated explanations.</returns>
+    /// <response code="200">Returns the list of matching books.</response>
+    /// <response code="400">If the query is empty or exceeds the length limit.</response>
+    /// <response code="429">If the rate limit is exceeded (10 requests per minute).</response>
     [HttpGet]
     [EnableRateLimiting("SearchPolicy")]
+    [ProducesResponseType(typeof(IEnumerable<FindThatBook.Api.Domain.Entities.BookCandidate>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Search([FromQuery] string query, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(query)) return BadRequest("Query cannot be empty.");

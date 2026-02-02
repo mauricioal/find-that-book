@@ -13,7 +13,25 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Find That Book API",
+        Version = "v1",
+        Description = "A smart library discovery service that uses Google Gemini AI to interpret messy user queries and find matches via OpenLibrary.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Find That Book Support",
+            Url = new Uri("https://github.com/mauricioal/find-that-book")
+        }
+    });
+
+    // Include XML comments in Swagger
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});
 
 builder.Services.AddRateLimiter(options =>
 {
