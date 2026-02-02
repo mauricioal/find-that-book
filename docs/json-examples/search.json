@@ -1,0 +1,263 @@
+{
+    "numFound": 102,
+    "start": 0,
+    "numFoundExact": true,
+    "num_found": 102,
+    "documentation_url": "https://openlibrary.org/dev/docs/api/search",
+    "q": "",
+    "offset": null,
+    "docs": [
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "no_ebook",
+            "edition_count": 161,
+            "first_publish_year": 1960,
+            "has_fulltext": false,
+            "key": "/works/OL37513138W",
+            "language": [
+                "eng"
+            ],
+            "public_scan_b": false,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL22428A",
+                "OL18319A"
+            ],
+            "author_name": [
+                "Garrison Keillor",
+                "Mark Twain"
+            ],
+            "cover_edition_key": "OL7591383M",
+            "cover_i": 1237481,
+            "ebook_access": "no_ebook",
+            "edition_count": 3,
+            "first_publish_year": 1996,
+            "has_fulltext": false,
+            "key": "/works/OL14910638W",
+            "language": [
+                "eng"
+            ],
+            "public_scan_b": false,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "public",
+            "edition_count": 2,
+            "first_publish_year": 1918,
+            "has_fulltext": true,
+            "ia": [
+                "bwb_P8-BJS-568"
+            ],
+            "ia_collection": [
+                "internetarchivebooks"
+            ],
+            "key": "/works/OL37797205W",
+            "language": [
+                "eng"
+            ],
+            "lending_edition_s": "OL58656526M",
+            "lending_identifier_s": "bwb_P8-BJS-568",
+            "public_scan_b": true,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "no_ebook",
+            "edition_count": 1,
+            "first_publish_year": 1968,
+            "has_fulltext": false,
+            "key": "/works/OL44117964W",
+            "public_scan_b": false,
+            "title": "THE ADVENTURES OF HUCKLEBERRY FINN"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "printdisabled",
+            "edition_count": 1,
+            "first_publish_year": 1963,
+            "has_fulltext": true,
+            "ia": [
+                "bwb_O8-CFO-487"
+            ],
+            "ia_collection": [
+                "internetarchivebooks",
+                "printdisabled"
+            ],
+            "key": "/works/OL43051830W",
+            "language": [
+                "eng"
+            ],
+            "public_scan_b": false,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "printdisabled",
+            "edition_count": 1,
+            "first_publish_year": 1953,
+            "has_fulltext": true,
+            "ia": [
+                "adventuresofhuck0000samu_s2q9"
+            ],
+            "ia_collection": [
+                "internetarchivebooks",
+                "printdisabled"
+            ],
+            "key": "/works/OL42970573W",
+            "language": [
+                "eng"
+            ],
+            "public_scan_b": false,
+            "title": "The Adventures Of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "cover_edition_key": "OL58543415M",
+            "cover_i": 14864584,
+            "ebook_access": "public",
+            "edition_count": 8,
+            "first_publish_year": 1884,
+            "has_fulltext": true,
+            "ia": [
+                "adventuresofhuck0000mark_f6b5",
+                "adventuresofhuck0000mark_v6n6",
+                "adventuresofhuck0000mark_k0a0",
+                "adventuresofhuck0000mark_s8z4",
+                "adventuresofhuck0000mark_g9w9",
+                "adventuresofhuck0000mark_x3j9",
+                "adventuresofhuck0000mark_c5f9",
+                "adventuresofhuck0000mark_m8n4"
+            ],
+            "ia_collection": [
+                "inlibrary",
+                "internetarchivebooks",
+                "printdisabled"
+            ],
+            "key": "/works/OL42970556W",
+            "language": [
+                "eng"
+            ],
+            "lending_edition_s": "OL58543422M",
+            "lending_identifier_s": "adventuresofhuck0000mark_f6b5",
+            "public_scan_b": true,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "cover_edition_key": "OL58692863M",
+            "cover_i": 14913522,
+            "ebook_access": "public",
+            "edition_count": 9,
+            "first_publish_year": 1918,
+            "has_fulltext": true,
+            "ia": [
+                "bwb_W9-CJL-616",
+                "bwb_P9-CSD-845",
+                "bwb_W9-ABM-861",
+                "bwb_P9-EKZ-150",
+                "bwb_W8-CCN-107",
+                "bwb_KU-244-949",
+                "bwb_S0-AUN-556",
+                "bwb_P9-CZE-417",
+                "bwb_S0-AJT-539"
+            ],
+            "ia_collection": [
+                "internetarchivebooks",
+                "printdisabled"
+            ],
+            "key": "/works/OL43042460W",
+            "language": [
+                "eng"
+            ],
+            "lending_edition_s": "OL58722401M",
+            "lending_identifier_s": "bwb_W9-CJL-616",
+            "public_scan_b": true,
+            "title": "The Adventures of Huckleberry Finn"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "ebook_access": "no_ebook",
+            "edition_count": 1,
+            "first_publish_year": 2012,
+            "has_fulltext": false,
+            "key": "/works/OL44176082W",
+            "public_scan_b": false,
+            "title": "The Complete Adventures of Tom Sawyer and Huckleberry Finn - the Adventures of Tom Sawyer, Adventures of Huckleberry Finn,T"
+        },
+        {
+            "author_key": [
+                "OL18319A"
+            ],
+            "author_name": [
+                "Mark Twain"
+            ],
+            "cover_edition_key": "OL7675919M",
+            "cover_i": 320586,
+            "ebook_access": "borrowable",
+            "edition_count": 9,
+            "first_publish_year": 1982,
+            "has_fulltext": true,
+            "ia": [
+                "marktwainfourcom0000twai_a6z2",
+                "marktwainfourcom0000twai",
+                "marktwainfourcom0000twai_r3y8"
+            ],
+            "ia_collection": [
+                "inlibrary",
+                "internetarchivebooks",
+                "printdisabled"
+            ],
+            "key": "/works/OL54156W",
+            "language": [
+                "eng"
+            ],
+            "lending_edition_s": "OL31962414M",
+            "lending_identifier_s": "marktwainfourcom0000twai_a6z2",
+            "public_scan_b": false,
+            "title": "Four Complete Novels (Adventures of Huckleberry Finn / Adventures of Tom Sawyer / The Prince and the Pauper / A Connecticut Yankee in King Artur's Court / Mark Twain's (burlesque) Autobiography / Sketches)"
+        }
+    ]
+}

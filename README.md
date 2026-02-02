@@ -56,6 +56,8 @@ The solution follows **Clean Architecture** to ensure separation of concerns and
     *   **OpenLibrary**: Uses `HttpClient` to fetch data from OpenLibrary.
 *   **Web**: The API entry point (Controllers).
 
+---
+
 ### The Search Workflow
 1.  **Extract**: The raw user query (e.g., "tolkien hobbit illustrated") is sent to Gemini to extract structured intent (Title: "The Hobbit", Author: "Tolkien", Keywords: ["illustrated"]).
 2.  **Search**: The structured intent is used to query the OpenLibrary Search API.
@@ -69,8 +71,11 @@ The solution follows **Clean Architecture** to ensure separation of concerns and
 
 *   **Hybrid Ranking Approach**: While LLMs are powerful, strict logic rules (like "Exact Title + Primary Author must be rank 1") are safer implemented in code. I used C# logic for the "Matching Hierarchy" to ensure strict adherence to the requirements, while using AI for the fuzzy "understanding" and "explaining" parts.
 *   **Two-Step AI Pipeline**: Instead of a single "Tool Call", I split the process. First, extract intent to get clean search terms. Second, summarize results. This provides better control over the OpenLibrary API usage.
-*   **Data Quality Handling**: OpenLibrary often mixes authors and illustrators. The system explicitly fetches `/works/{id}` data to differentiate `author` (primary) from other roles, ensuring we don't rank a book high just because an illustrator matches the author query.
-*   **Monolithic Structure**: For the scale of this challenge, I used a single project solution with logical layering (Folders) rather than multiple `.csproj` files to keep the development loop fast while maintaining architectural cleanliness.
+*   **Data Quality Handling**: OpenLibrary often mixes authors and illustrators or other types of collaborators. The system fetches `/works/{id}` and `/author/{id}` data and uses **bio analysis** (checking if the title appears in the author's bio) and role checks to probabilistically differentiate `primary` authors from contributors.
+*   **Project Structure**: The solution is divided into three projects:
+    *   `FindThatBook.Api`: The backend API (.NET 8).
+    *   `FindThatBook.Web`: The frontend UI (React + Vite).
+    *   `FindThatBook.Tests`: Unit tests for the backend logic.
 
 ---
 
@@ -91,24 +96,42 @@ The solution follows **Clean Architecture** to ensure separation of concerns and
 ## 🧪 Testing Strategy
 
 *   **Unit Tests (`FindThatBook.Tests`)**:
-    *   Focused on the **Core Domain Logic**, specifically the `BookMatcher`.
+    *   Focused on the **Core Domain Logic**, specifically the `BookMatcher` and `BookSearchService`.
     *   Verified that the "Matching Hierarchy" works correctly (e.g., ensuring an exact title match with a primary author outranks a contributor match).
-    *   Used `xUnit` and `FluentAssertions` for readable tests.
+    *   Mocked external dependencies (`IOpenLibraryClient`, `IAiService`) to test orchestration logic in isolation.
+    *   Used `xUnit`, `FluentAssertions`, and `Moq` for readable and robust tests.
 *   **Manual Integration Testing**:
     *   Verified the full pipeline end-to-end using real queries against the OpenLibrary API and Gemini to ensure the integration points (HTTP Client, JSON parsing) function correctly.
 
 ---
 
+## 🧠 Context Engineering Practices
+
+This project utilizes advanced **Context Engineering** to ensure consistency and quality during AI-assisted development:
+
+*   **`gemini.md`**: A root-level configuration file that defines the project's architectural rules, coding standards (naming conventions, DI usage), and testing requirements. This serves as the "source of truth" for AI agents working on the codebase.
+*   **`.gemini/`**: A folder containing reusable, high-quality prompts for specialized tasks, such as:
+    *   `code-review-backend.md`: For standardized architectural and performance reviews of .NET code.
+    *   `code-review-frontend.md`: For reviewing React/TypeScript frontend code against project standards.
+    *   `security-audit.md`: For performing OWASP-aligned security scans of the solution.
+    *   `generate-docstrings-csharp.md`: For generating .NET 8 compliant XML documentation.
+*   **`/docs/`**: Comprehensive documentation covering the technical stack, architectural patterns, and feature-specific implementation plans (e.g., `005FixPrimaryAuthorLogicPLAN.md`), ensuring that both human developers and AI agents have clear guidance on the project's evolution.
+
+---
+
 ## 🔮 Future Improvements
 
-
-
-1.  **Multi-LLM Support**: Leverage the `Microsoft.Extensions.AI` abstraction to easily integrate other providers such as **OpenAI** (GPT-4o) or **Anthropic** (Claude 3.5 Sonnet) as alternatives to Gemini.
-
-2.  **Resilience**: Add `Polly` for retrying failed OpenLibrary or AI requests (Rate limiting is common).
-
-3.  **Caching**: Implement `IMemoryCache` or Redis for search results to reduce API costs and latency.
-
-4.  **Web Frontend**: Build the React UI `FindThatBook.Web` to consume this API.
-
-5.  **Integration Tests**: Add `TestServer` tests that mock external HTTP calls to verify the full `BookSearchService` orchestration.
+1.  **Configuration Management**: Extract all external service URLs (OpenLibrary, etc.) into `appsettings.json` or Environment Variables for better flexibility across environments.
+2.  **Architectural Scaling**: Split the `FindThatBook.Api` project into separate Class Library projects (`FindThatBook.Domain`, `FindThatBook.Application`, `FindThatBook.Infrastructure`) to strictly enforce Clean Architecture boundaries.
+3.  **Frontend Polish**: Refactor the React project structure to follow feature-based folders and improve component reusability/design.
+4.  **Cloud Deployment**: Deploy the solution to **Azure** using cost-effective services like **Azure Container Apps** (consumption plan) or **App Service** (Linux Free Tier) and **Static Web Apps** for the frontend.
+5.  **Observability**: Integrate **OpenTelemetry** with tools like **Aspire Dashboard**, **Application Insights**, or **Grafana/Prometheus** for distributed tracing and metrics across frontend and backend.
+6.  **Security**: Secure the API with **OAuth2/OIDC** (e.g., Auth0 or Azure AD B2C) and ensure strict CORS/CSP policies between the frontend and backend.
+7.  **E2E Testing**: Implement **Playwright** tests for the frontend to verify critical user flows (Search -> Results -> Details).
+8.  **Refined Explanations**: Fine-tune the AI prompts or use few-shot prompting to ensure the "Why it matched" explanations strictly adhere to the requested format and tone.
+9.  **AI Reranking**: Introduce a final re-ranking step where the LLM evaluates the top 5 candidates deeply to adjust the order based on subtle query nuances before returning the final top 5.
+10. **Multi-LLM Support**: Leverage `Microsoft.Extensions.AI` to easily swap providers (OpenAI, Anthropic) or implement fallback strategies.
+11. **Resilience & Caching**: Add `Polly` for retries/circuit breaking and `Redis` for caching search results.
+12. **Integration Tests**: Add `TestServer` backend integration tests.
+13. **Advanced AI Integration**: Improve prompt engineering for more accurate intent extraction and result grounding, and/or implement native **Tool/Function Calling** with structured inputs/outputs to improve reliability over raw JSON parsing.
+14. **Code Quality & Typing**: Audit the usage of `var` and explicit types throughout the solution to ensure that variables are typed as abstractions (interfaces) where appropriate for better decoupling and testability.
