@@ -34,7 +34,7 @@ public class BookSearchService : IBookSearchService
         // 3. Resolve Primary Authors and Apply Hierarchy
         foreach (var candidate in candidates)
         {
-            var (primaryAuthors, contributors) = await _openLibraryClient.GetAuthorDetailsAsync(candidate.OpenLibraryId, ct);
+            var (primaryAuthors, contributors) = await _openLibraryClient.GetAuthorDetailsAsync(candidate.OpenLibraryId, intent.Title, ct);
             candidate.PrimaryAuthors = primaryAuthors;
             
             // Derive contributors: Start with those explicitly found (if any), then add those from search result not in primary

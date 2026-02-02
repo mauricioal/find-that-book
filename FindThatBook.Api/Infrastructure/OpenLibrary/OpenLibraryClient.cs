@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using FindThatBook.Api.Application.Interfaces;
 using FindThatBook.Api.Domain.Entities;
 
@@ -44,37 +46,76 @@ public class OpenLibraryClient : IOpenLibraryClient
         });
     }
 
-    public async Task<(List<string> PrimaryAuthors, List<string> Contributors)> GetAuthorDetailsAsync(string workKey, CancellationToken ct = default)
+    public async Task<(List<string> PrimaryAuthors, List<string> Contributors)> GetAuthorDetailsAsync(string workKey, string? targetTitle, CancellationToken ct = default)
     {
         try
         {
             var work = await _httpClient.GetFromJsonAsync<OpenLibraryWork>($"{workKey}.json", ct);
             var primaryAuthors = new List<string>();
+            var contributors = new List<string>();
 
             if (work?.Authors != null)
             {
                 // Fetch authors in parallel
                 var authorTasks = work.Authors
                     .Where(a => a.Author?.Key != null)
-                    .Select(a => _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{a.Author!.Key}.json", ct));
+                    .Select(async a => 
+                    {
+                        var author = await _httpClient.GetFromJsonAsync<OpenLibraryAuthor>($"{a.Author!.Key}.json", ct);
+                        return author;
+                    });
 
-                var authors = await Task.WhenAll(authorTasks);
+                var authors = (await Task.WhenAll(authorTasks)).Where(a => a != null && !string.IsNullOrEmpty(a.Name)).ToList();
+
                 
-                primaryAuthors = authors
-                    .Where(a => !string.IsNullOrEmpty(a?.Name))
-                    .Select(a => a!.Name!)
-                    .ToList();
+                foreach (var author in authors)
+                {
+                    string bioText = ExtractBio(author!.Bio);
+                    bool isPrimary = !string.IsNullOrWhiteSpace(targetTitle) && 
+                                     !string.IsNullOrWhiteSpace(bioText) && 
+                                     Normalize(bioText).Contains(Normalize(targetTitle), StringComparison.OrdinalIgnoreCase);
+
+                    if (isPrimary)
+                    {
+                        primaryAuthors.Add(author.Name!);
+                    }
+                    else
+                    {
+                        contributors.Add(author.Name!);
+                    }
+                    Console.WriteLine($"Author: {author.Name}, Bio: {bioText}, IsPrimary: {isPrimary}");
+                }
             }
             
-            // Currently returning empty for contributors from Work record directly.
-            // Service layer will infer contributors by comparing Search Results (Editions aggregate) vs Work Record (Canonical).
-            return (primaryAuthors, new List<string>());
+            return (primaryAuthors, contributors);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching author details for work {WorkKey}", workKey);
             return (new List<string>(), new List<string>());
         }
+    }
+
+    private string Normalize(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        return Regex.Replace(input.ToLowerInvariant(), @"[^\w\s]", "").Trim();
+    }
+
+    private string ExtractBio(JsonElement bioElement)
+    {
+        if (bioElement.ValueKind == JsonValueKind.String)
+        {
+            return bioElement.GetString() ?? string.Empty;
+        }
+        else if (bioElement.ValueKind == JsonValueKind.Object)
+        {
+            if (bioElement.TryGetProperty("value", out var valueProp) && valueProp.ValueKind == JsonValueKind.String)
+            {
+                return valueProp.GetString() ?? string.Empty;
+            }
+        }
+        return string.Empty;
     }
 
     private class OpenLibraryWork
@@ -99,6 +140,9 @@ public class OpenLibraryClient : IOpenLibraryClient
     {
         [JsonPropertyName("name")]
         public string? Name { get; set; }
+        
+        [JsonPropertyName("bio")]
+        public JsonElement Bio { get; set; }
     }
 
     private class OpenLibrarySearchResponse

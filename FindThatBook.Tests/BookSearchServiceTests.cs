@@ -45,7 +45,7 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock different ranks:
@@ -90,7 +90,7 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock ranks:
@@ -130,7 +130,7 @@ public class BookSearchServiceTests
         _openLibraryClientMock.Setup(x => x.SearchBooksAsync(intent, It.IsAny<CancellationToken>()))
             .ReturnsAsync(candidates);
 
-        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _openLibraryClientMock.Setup(x => x.GetAuthorDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new List<string>(), new List<string>()));
 
         // Mock rank: None
