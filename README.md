@@ -9,17 +9,17 @@ A smart library discovery service that uses Google Gemini AI to interpret messy 
 *   A Google Gemini API Key (Get it here: [Google AI Studio](https://aistudio.google.com/app/apikey))
 
 ### Configuration
+
+#### Local Development
+**Security Warning:** Never commit your API keys to version control.
 1.  Navigate to the `FindThatBook.Api` directory.
-2.  Open `appsettings.json`.
+2.  Open `appsettings.Development.json`.
 3.  Replace the placeholder with your actual API key:
     ```json
     "Gemini": {
       "ApiKey": "YOUR_REAL_API_KEY_HERE"
     }
-
-**Security Warning:** Never commit your API keys to version control.
-
-#### Local Development (User Secrets)
+##### OR (User Secrets)
 1.  Navigate to the `FindThatBook.Api` directory:
     ```bash
     cd FindThatBook.Api
@@ -40,9 +40,10 @@ Set the following environment variable on your server or cloud provider:
 ### Running the Application
 ```bash
 cd FindThatBook.Api
-dotnet run
+dotnet run --environment Development
 ```
 The API will start (typically on `http://localhost:5000` or `https://localhost:5001`).
+To view the swagger documentation open 'http://localhost:5000/swagger/index.html'
 
 ### Running the Web Application (Frontend)
 1.  Navigate to the `FindThatBook.Web` directory.
@@ -144,17 +145,24 @@ This project utilizes advanced **Context Engineering** to ensure consistency and
 
 ## 🔮 Future Improvements
 
-1.  **Configuration Management**: Extract all external service URLs (OpenLibrary, etc.) into `appsettings.json` or Environment Variables for better flexibility across environments.
-2.  **Architectural Scaling**: Split the `FindThatBook.Api` project into separate Class Library projects (`FindThatBook.Domain`, `FindThatBook.Application`, `FindThatBook.Infrastructure`) to strictly enforce Clean Architecture boundaries.
-3.  **Frontend Polish**: Refactor the React project structure to follow feature-based folders and improve component reusability/design.
-4.  **Cloud Deployment**: Deploy the solution to **Azure** using cost-effective services like **Azure Container Apps** (consumption plan) or **App Service** (Linux Free Tier) and **Static Web Apps** for the frontend.
-5.  **Observability**: Integrate **OpenTelemetry** with tools like **Aspire Dashboard**, **Application Insights**, or **Grafana/Prometheus** for distributed tracing and metrics across frontend and backend.
-6.  **Security**: Secure the API with **OAuth2/OIDC** (e.g., Auth0 or Azure AD B2C) and ensure strict CORS/CSP policies between the frontend and backend.
-7.  **E2E Testing**: Implement **Playwright** tests for the frontend to verify critical user flows (Search -> Results -> Details).
-8.  **Refined Explanations**: Fine-tune the AI prompts or use few-shot prompting to ensure the "Why it matched" explanations strictly adhere to the requested format and tone.
-9.  **AI Reranking**: Introduce a final re-ranking step where the LLM evaluates the top 5 candidates deeply to adjust the order based on subtle query nuances before returning the final top 5.
-10. **Multi-LLM Support**: Leverage `Microsoft.Extensions.AI` to easily swap providers (OpenAI, Anthropic) or implement fallback strategies.
-11. **Resilience & Caching**: Add `Polly` for retries/circuit breaking and `Redis` for caching search results.
-12. **Integration Tests**: Add `TestServer` backend integration tests.
-13. **Advanced AI Integration**: Improve prompt engineering for more accurate intent extraction and result grounding, and/or implement native **Tool/Function Calling** with structured inputs/outputs to improve reliability over raw JSON parsing.
-14. **Code Quality & Typing**: Audit the usage of `var` and explicit types throughout the solution to ensure that variables are typed as abstractions (interfaces) where appropriate for better decoupling and testability.
+### 🛠 Code & Architecture (Short-term)
+1.  **Code Quality & Typing**: Audit the usage of `var` and explicit types throughout the solution to ensure that variables are typed as abstractions (interfaces) where appropriate for better decoupling and testability.
+2.  **Configuration Management**: Extract all external service URLs (OpenLibrary, etc.) into `appsettings.json` or Environment Variables for better flexibility across environments.
+3.  **Refined Explanations**: Fine-tune the AI prompts or use few-shot prompting to ensure the "Why it matched" explanations strictly adhere to the requested format and tone.
+4.  **Frontend Polish**: Refactor the React project structure to follow feature-based folders and improve component reusability/design.
+5.  **Integration Tests**: Add `TestServer` backend integration tests to verify API endpoints in a simulated environment.
+
+### 🚀 Advanced Features (Medium-term)
+6.  **Multi-LLM Support**: Leverage `Microsoft.Extensions.AI` to easily swap providers (OpenAI, Anthropic) or implement fallback strategies.
+7.  **AI Workflow Enhancements**: Improve the AI interaction model by implementing structured **System, Human, and Tool messages**, and introducing **Memory Management** for better conversational context.
+8.  **Architectural Scaling**: Split the `FindThatBook.Api` project into separate Class Library projects (`FindThatBook.Domain`, `FindThatBook.Application`, `FindThatBook.Infrastructure`) to strictly enforce Clean Architecture boundaries.
+9.  **AI Reranking**: Introduce a final re-ranking step where the LLM evaluates the top 5 candidates deeply to adjust the order based on subtle query nuances.
+10. **Advanced AI Integration**: Implement native **Tool/Function Calling** with structured inputs/outputs to improve reliability over raw JSON parsing.
+11. **E2E Testing**: Implement **Playwright** tests for the frontend to verify critical user flows (Search -> Results -> Details).
+
+### ☁ Infrastructure & DevOps (Long-term)
+12. **Resilience & Caching**: Add `Polly` for retries/circuit breaking and `Redis` for caching search results to improve performance and reliability.
+13. **Observability**: Integrate **OpenTelemetry** with tools like **Aspire Dashboard**, **Application Insights**, or **Grafana/Prometheus** for distributed tracing and metrics.
+14. **Security**: Secure the API with **OAuth2/OIDC** (e.g., Auth0 or Azure AD B2C) and ensure strict CORS/CSP policies.
+15. **CI/CD Pipelines**: Implement **GitHub Actions** pipelines to automate quality gates, including code linting, test execution (unit/integration), and automated security audits (SAST/DAST).
+16. **Cloud Deployment**: Deploy the solution to **Azure** using cost-effective services like **Azure Container Apps** (consumption plan) or **App Service** (Linux Free Tier) and **Static Web Apps** for the frontend.
