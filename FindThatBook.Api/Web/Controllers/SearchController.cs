@@ -1,5 +1,6 @@
 using FindThatBook.Api.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FindThatBook.Api.Web.Controllers;
 
@@ -28,9 +29,11 @@ public class SearchController : ControllerBase
     /// <param name="ct">A cancellation token to cancel the request.</param>
     /// <returns>An HTTP response containing the search results or an error message.</returns>
     [HttpGet]
+    [EnableRateLimiting("SearchPolicy")]
     public async Task<IActionResult> Search([FromQuery] string query, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(query)) return BadRequest("Query cannot be empty.");
+        if (query.Length > 250) return BadRequest("Query is too long. Maximum length is 250 characters.");
 
         var results = await _searchService.SearchAsync(query, ct);
         return Ok(results);

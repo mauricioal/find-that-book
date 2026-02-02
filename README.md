@@ -16,7 +16,26 @@ A smart library discovery service that uses Google Gemini AI to interpret messy 
     "Gemini": {
       "ApiKey": "YOUR_REAL_API_KEY_HERE"
     }
+
+**Security Warning:** Never commit your API keys to version control.
+
+#### Local Development (User Secrets)
+1.  Navigate to the `FindThatBook.Api` directory:
+    ```bash
+    cd FindThatBook.Api
     ```
+2.  Initialize User Secrets:
+    ```bash
+    dotnet user-secrets init
+    ```
+3.  Set your Gemini API key:
+    ```bash
+    dotnet user-secrets set "Gemini:ApiKey" "YOUR_REAL_API_KEY_HERE"
+    ```
+
+#### Production (Environment Variables)
+Set the following environment variable on your server or cloud provider:
+*   `Gemini__ApiKey` = `YOUR_REAL_API_KEY_HERE`
 
 ### Running the Application
 ```bash
@@ -90,6 +109,10 @@ The solution follows **Clean Architecture** to ensure separation of concerns and
     *   Author Fallback
 *   **AI Explanations**: Returns a "Why it matched" sentence for every result, grounded in the actual data.
 *   **Canonical Data**: Resolves works to their canonical versions to avoid duplicates.
+*   **Security Hardening**:
+    *   **Rate Limiting**: Implements `FixedWindowLimiter` (10 requests/minute) to prevent abuse.
+    *   **Prompt Injection Mitigation**: Uses XML delimiters (`<user_query>`) and explicit instruction ignoring to protect LLM contexts.
+    *   **Input Validation**: Enforces maximum query length (250 chars) and sanitizes inputs.
 
 ---
 
