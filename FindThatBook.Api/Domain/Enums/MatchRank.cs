@@ -11,22 +11,27 @@ public enum MatchRank
     None = 0,
 
     /// <summary>
+    /// Lowest relevance; matched on title only without an author match.
+    /// </summary>
+    TitleOnlyFallback = 1,
+
+    /// <summary>
     /// Low relevance; matched on author only without a title match.
     /// </summary>
-    AuthorOnlyFallback = 1,
+    AuthorOnlyFallback = 2,
 
     /// <summary>
     /// Medium relevance; near match on title.
     /// </summary>
-    NearMatch = 2,
+    NearMatch = 3,
 
     /// <summary>
     /// High relevance; exact title match but the author is a contributor.
     /// </summary>
-    TitleAndContributorMatch = 3,
+    TitleAndContributorMatch = 4,
 
     /// <summary>
     /// Highest relevance; exact or normalized title match with a primary author match.
     /// </summary>
-    StrongMatch = 4 
+    StrongMatch = 5
 }

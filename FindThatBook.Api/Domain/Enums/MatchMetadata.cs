@@ -23,7 +23,12 @@ public enum MatchType
     /// <summary>
     /// Match found based on author name only.
     /// </summary>
-    AuthorOnly = 3
+    AuthorOnly = 3,
+
+    /// <summary>
+    /// Match found based on title name only.
+    /// </summary>
+    TitleOnly = 4
 }
 
 /// <summary>
