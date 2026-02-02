@@ -2,8 +2,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using FindThatBook.Api.Application.DTOs;
 using FindThatBook.Api.Application.Interfaces;
 using FindThatBook.Api.Domain.Entities;
+using Microsoft.Extensions.Options;
 
 namespace FindThatBook.Api.Infrastructure.OpenLibrary;
 
@@ -14,17 +16,25 @@ public class OpenLibraryClient : IOpenLibraryClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<OpenLibraryClient> _logger;
+    private readonly ExternalServicesConfig _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenLibraryClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client configured for Open Library access.</param>
     /// <param name="logger">The logger instance.</param>
-    public OpenLibraryClient(HttpClient httpClient, ILogger<OpenLibraryClient> logger)
+    /// <param name="options">The external services configuration options.</param>
+    public OpenLibraryClient(HttpClient httpClient, ILogger<OpenLibraryClient> logger, IOptions<ExternalServicesConfig> options)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _httpClient.BaseAddress = new Uri("https://openlibrary.org/");
+        _config = options.Value;
+        
+        var baseUrl = _config.OpenLibrary.BaseUrl;
+        if (!string.IsNullOrEmpty(baseUrl))
+        {
+            _httpClient.BaseAddress = new Uri(baseUrl);
+        }
     }
 
     /// <inheritdoc />
@@ -38,12 +48,14 @@ public class OpenLibraryClient : IOpenLibraryClient
         if (!queries.Any()) return Enumerable.Empty<BookCandidate>();
 
         var queryString = string.Join("&", queries);
-        _logger.LogInformation("OpenLibrary query: {QueryString}", queryString);
+        _logger.LogDebug("OpenLibrary query: {QueryString}", queryString);
 
         var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>($"search.json?{queryString}&limit=10", ct);
-        _logger.LogInformation("OpenLibrary response: {Response}", response);
+        _logger.LogDebug("OpenLibrary response: {Response}", response);
 
         if (response?.Docs == null) return Enumerable.Empty<BookCandidate>();
+
+        var coversBaseUrl = _config.OpenLibrary.CoversUrl;
 
         return response.Docs.Select(doc => new BookCandidate
         {
@@ -51,7 +63,7 @@ public class OpenLibraryClient : IOpenLibraryClient
             Authors = doc.AuthorNames ?? new List<string>(),
             FirstPublishYear = doc.FirstPublishYear,
             OpenLibraryId = doc.Key,
-            CoverUrl = doc.CoverI != null ? $"https://covers.openlibrary.org/b/id/{doc.CoverI}-M.jpg" : null
+            CoverUrl = doc.CoverI != null ? $"{coversBaseUrl}{doc.CoverI}-M.jpg" : null
         });
     }
 

@@ -7,14 +7,23 @@ using GeminiDotnet.Extensions.AI;
 using GeminiDotnet;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using FindThatBook.Api.Application.DTOs;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Configuration
+builder.Services.Configure<ExternalServicesConfig>(
+    builder.Configuration.GetSection("ExternalServices"));
+
 builder.Services.AddSwaggerGen(options =>
 {
+    var config = builder.Configuration.GetSection("ExternalServices").Get<ExternalServicesConfig>();
+    
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title = "Find That Book API",
@@ -23,7 +32,7 @@ builder.Services.AddSwaggerGen(options =>
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = "Find That Book Support",
-            Url = new Uri("https://github.com/mauricioal/find-that-book")
+            Url = new Uri(config?.Project?.RepoUrl ?? "https://github.com/mauricioal/find-that-book")
         }
     });
 
@@ -46,10 +55,12 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddCors(options =>
 {
+    var config = builder.Configuration.GetSection("ExternalServices").Get<ExternalServicesConfig>();
+    
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins(config?.Frontend?.BaseUrl ?? "http://localhost:5173")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
