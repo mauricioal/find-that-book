@@ -7,11 +7,19 @@ using FindThatBook.Api.Domain.Entities;
 
 namespace FindThatBook.Api.Infrastructure.OpenLibrary;
 
+/// <summary>
+/// Implements the client for interacting with the Open Library API.
+/// </summary>
 public class OpenLibraryClient : IOpenLibraryClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<OpenLibraryClient> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenLibraryClient"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client configured for Open Library access.</param>
+    /// <param name="logger">The logger instance.</param>
     public OpenLibraryClient(HttpClient httpClient, ILogger<OpenLibraryClient> logger)
     {
         _httpClient = httpClient;
@@ -19,6 +27,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         _httpClient.BaseAddress = new Uri("https://openlibrary.org/");
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<BookCandidate>> SearchBooksAsync(SearchIntent intent, CancellationToken ct = default)
     {
         var queries = new List<string>();
@@ -46,6 +55,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         });
     }
 
+    /// <inheritdoc />
     public async Task<(List<string> PrimaryAuthors, List<string> Contributors)> GetAuthorDetailsAsync(string workKey, string? targetTitle, CancellationToken ct = default)
     {
         try

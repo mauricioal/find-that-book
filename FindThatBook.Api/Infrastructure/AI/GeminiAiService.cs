@@ -5,16 +5,24 @@ using Microsoft.Extensions.AI;
 
 namespace FindThatBook.Api.Infrastructure.AI;
 
+/// <summary>
+/// Implements the AI service using Google Gemini for intent extraction and result explanation.
+/// </summary>
 public class GeminiAiService : IAiService
 {
     private readonly IChatClient _chatClient;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GeminiAiService"/> class.
+    /// </summary>
+    /// <param name="chatClient">The chat client used to communicate with the Gemini API.</param>
     public GeminiAiService(IChatClient chatClient)
     {
         _chatClient = chatClient;
     }
 
+    /// <inheritdoc />
     public async Task<SearchIntent> ExtractSearchIntentAsync(string rawQuery, CancellationToken ct = default)
     {
         var prompt = $$"""
@@ -97,6 +105,7 @@ public class GeminiAiService : IAiService
         }
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<BookCandidate>> RankAndExplainResultsAsync(string rawQuery, SearchIntent intent, IEnumerable<BookCandidate> candidates, CancellationToken ct = default)
     {
         if (!candidates.Any()) return candidates;

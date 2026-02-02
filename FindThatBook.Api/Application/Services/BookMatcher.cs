@@ -5,8 +5,12 @@ using System.Text.RegularExpressions;
 
 namespace FindThatBook.Api.Application.Services;
 
+/// <summary>
+/// Implements logic to match user search intent against book candidates using a hierarchical ranking system.
+/// </summary>
 public class BookMatcher : IBookMatcher
 {
+    /// <inheritdoc />
     public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate)
     {
         var normQueryTitle = Normalize(intent.Title ?? "");
@@ -57,18 +61,15 @@ public class BookMatcher : IBookMatcher
         return new MatchResult(MatchRank.None, FindThatBook.Api.Domain.Enums.MatchType.None, AuthorStatus.Unknown);
     }
 
+    /// <summary>
+    /// Normalizes the input string by converting to lowercase and removing non-alphanumeric characters.
+    /// </summary>
+    /// <param name="input">The string to normalize.</param>
+    /// <returns>The normalized string.</returns>
     private string Normalize(string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
         return Regex.Replace(input.ToLowerInvariant(), @"[^\w\s]", "").Trim();
     }
 
-    private string GetCoreTitle(string title)
-    {
-        // Simple core title extractor: lowercase, remove special chars, remove "the", "a"
-        var norm = Normalize(title);
-        var words = norm.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                        .Where(w => w != "the" && w != "a" && w != "an" && w != "of");
-        return string.Join(" ", words);
-    }
 }

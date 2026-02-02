@@ -3,17 +3,35 @@ using FindThatBook.Api.Domain.Entities;
 
 namespace FindThatBook.Api.Application.Services;
 
+/// <summary>
+/// Defines the contract for the book search service.
+/// </summary>
 public interface IBookSearchService
 {
+    /// <summary>
+    /// Orchestrates the book search process: interprets intent, searches external APIs, matches results, and generates explanations.
+    /// </summary>
+    /// <param name="query">The raw user query string.</param>
+    /// <param name="ct">A cancellation token to cancel the operation.</param>
+    /// <returns>An enumerable of ranked and explained <see cref="BookCandidate"/> results.</returns>
     Task<IEnumerable<BookCandidate>> SearchAsync(string query, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Orchestrates the search workflow by coordinating AI, Open Library, and Matching services.
+/// </summary>
 public class BookSearchService : IBookSearchService
 {
     private readonly IAiService _aiService;
     private readonly IOpenLibraryClient _openLibraryClient;
     private readonly IBookMatcher _matcher;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BookSearchService"/> class.
+    /// </summary>
+    /// <param name="aiService">The AI service for intent extraction and result explanation.</param>
+    /// <param name="openLibraryClient">The client for interacting with the Open Library API.</param>
+    /// <param name="matcher">The service for ranking and matching candidates.</param>
     public BookSearchService(IAiService aiService, IOpenLibraryClient openLibraryClient, IBookMatcher matcher)
     {
         _aiService = aiService;
@@ -21,6 +39,7 @@ public class BookSearchService : IBookSearchService
         _matcher = matcher;
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<BookCandidate>> SearchAsync(string query, CancellationToken ct = default)
     {
         // 1. Extract Intent
