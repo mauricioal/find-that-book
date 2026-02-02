@@ -83,7 +83,6 @@ public class OpenLibraryClient : IOpenLibraryClient
                     {
                         contributors.Add(author.Name!);
                     }
-                    Console.WriteLine($"Author: {author.Name}, Bio: {bioText}, IsPrimary: {isPrimary}");
                 }
             }
             
@@ -104,7 +103,6 @@ public class OpenLibraryClient : IOpenLibraryClient
 
     private string CleanFunctionWords(string input)
     {
-        // Simple core title extractor: lowercase, remove special chars, remove "the", "a"
         var norm = Normalize(input);
         var words = norm.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .Where(w => w != "the" && w != "a" && w != "an" && w != "of");

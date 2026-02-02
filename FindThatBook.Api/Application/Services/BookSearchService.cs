@@ -31,15 +31,15 @@ public class BookSearchService : IBookSearchService
         // 2. Search OpenLibrary
         var candidates = (await _openLibraryClient.SearchBooksAsync(intent, ct)).ToList();
 
-        // 3. Resolve Primary Authors and Apply Hierarchy
-        foreach (var candidate in candidates)
+        // 3. Resolve Primary Authors and Apply Hierarchy in parallel
+        var enrichmentTasks = candidates.Select(async candidate =>
         {
             var (primaryAuthors, contributors) = await _openLibraryClient.GetAuthorDetailsAsync(candidate.OpenLibraryId, intent.Title, ct);
             candidate.PrimaryAuthors = primaryAuthors;
-            
+
             // Derive contributors: Start with those explicitly found (if any), then add those from search result not in primary
             var distinctContributors = new HashSet<string>(contributors, StringComparer.OrdinalIgnoreCase);
-            
+
             // Search result authors might include contributors not in Work record or explicitly marked
             foreach (var author in candidate.Authors)
             {
@@ -50,12 +50,14 @@ public class BookSearchService : IBookSearchService
                 }
             }
             candidate.Contributors = distinctContributors.ToList();
-            
+
             var matchResult = _matcher.CalculateMatch(query, intent, candidate);
             candidate.Rank = matchResult.Rank;
             candidate.MatchType = matchResult.MatchType;
             candidate.AuthorStatus = matchResult.AuthorStatus;
-        }
+        });
+
+        await Task.WhenAll(enrichmentTasks);
 
         // 4. Filter by Highest Rank found
         var validCandidates = candidates
