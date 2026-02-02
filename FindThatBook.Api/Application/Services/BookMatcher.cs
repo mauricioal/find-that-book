@@ -35,7 +35,7 @@ public class BookMatcher : IBookMatcher
 
         bool authorMatch = authorStatus != AuthorStatus.Unknown;
 
-        // a. Exact title + primary author match (strongest) OR Exact Title Only (if no author requested)
+        // a. Exact title + primary author match (strongest)
         if (exactTitle && authorStatus == AuthorStatus.Primary && authorWasRequested)
         {
             return new MatchResult(MatchRank.StrongMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
@@ -47,21 +47,24 @@ public class BookMatcher : IBookMatcher
             return new MatchResult(MatchRank.TitleAndContributorMatch, FindThatBook.Api.Domain.Enums.MatchType.ExactTitle, authorStatus);
         }
 
-        // c. Near-match title + author match OR Near-match title (if no author requested)
+        // c. Near-match title + author match
         if (nearMatchTitle && authorMatch)
         {
             return new MatchResult(MatchRank.NearMatch, FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle, authorStatus);
         }
 
-        // d. Author-only fallback
+        // d. Author-only fallback (no title matched or requested)
         if (authorMatch && string.IsNullOrEmpty(normQueryTitle))
         {
             return new MatchResult(MatchRank.AuthorOnlyFallback, FindThatBook.Api.Domain.Enums.MatchType.AuthorOnly, authorStatus);
         }
 
-        // e. Title-only fallback
-        if(nearMatchTitle && !authorWasRequested)
+        // e. Title-only fallback (No author requested)
+        if ((exactTitle || nearMatchTitle) && !authorWasRequested)
         {
+            var matchType = exactTitle ? FindThatBook.Api.Domain.Enums.MatchType.ExactTitle : FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle;
+            // Using TitleOnly as the rank is low, but keeping the specific match type for UI/AI explanation if needed.
+            // Actually, the Enum has TitleOnly, so we should use it if we want to be strict.
             return new MatchResult(MatchRank.TitleOnlyFallback, FindThatBook.Api.Domain.Enums.MatchType.TitleOnly, AuthorStatus.Unknown);
         }
 
