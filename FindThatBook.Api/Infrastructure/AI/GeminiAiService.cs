@@ -107,7 +107,7 @@ public class GeminiAiService : IAiService
             Authors = string.Join(", ", c.Authors),
             c.FirstPublishYear,
             c.MatchType,
-            c.AuthorStatus
+            AuthorStatus = c.AuthorStatus.ToString() // Convert Enum to String for LLM Clarity
         });
 
         var prompt = $$"""
@@ -122,6 +122,8 @@ public class GeminiAiService : IAiService
             
             Below is a list of results matched by our system (CANDIDATES). Your task is to provide a concise (1-2 sentences) explanation for EACH result, explaining "why this book" matched based on the data provided AND your interpretation of the query.
             For your reasoning compare the Original Query (Raw user input) against INTERPRETED title/author/keywords and CANDIDATE title/author/keywords.
+
+            CRITICAL: If an author match occurred, you MUST explicitly mention in the explanation whether the matched author is a "Primary" author or a "Contributor" (e.g., illustrator, editor) based on the "AuthorStatus" field provided in the CANDIDATE data.
 
             The explanation should express your reasoning of why the Original Query (Raw user input) matched the candidate based on the INTERPRETED Explanation for each field.
 

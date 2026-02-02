@@ -73,7 +73,7 @@ public class OpenLibraryClient : IOpenLibraryClient
                     string bioText = ExtractBio(author!.Bio);
                     bool isPrimary = !string.IsNullOrWhiteSpace(targetTitle) && 
                                      !string.IsNullOrWhiteSpace(bioText) && 
-                                     Normalize(bioText).Contains(Normalize(targetTitle), StringComparison.OrdinalIgnoreCase);
+                                     CleanFunctionWords(bioText).Contains(CleanFunctionWords(targetTitle), StringComparison.OrdinalIgnoreCase);
 
                     if (isPrimary)
                     {
@@ -100,6 +100,15 @@ public class OpenLibraryClient : IOpenLibraryClient
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
         return Regex.Replace(input.ToLowerInvariant(), @"[^\w\s]", "").Trim();
+    }
+
+    private string CleanFunctionWords(string input)
+    {
+        // Simple core title extractor: lowercase, remove special chars, remove "the", "a"
+        var norm = Normalize(input);
+        var words = norm.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Where(w => w != "the" && w != "a" && w != "an" && w != "of");
+        return string.Join(" ", words);
     }
 
     private string ExtractBio(JsonElement bioElement)
