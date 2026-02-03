@@ -30,7 +30,7 @@ public class GeminiAiService : IAiService
             
             ### Rules
             1. **Authors:** Map to "Author" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials)** match of a known author's name.
-            2. **Titles:** Map to "Title" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials or variants like subtitles)** match of a book title.
+            2. **Titles:** Map to "Title" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials or variants like subtitles)** match of a book title. If that is the case fill the main title normally used to refer to the book.
             3. **Fragments:** For "ExtractedTitleFragment" and "ExtractedAuthorFragment", provide the EXACT literal substring from the user query that was used to identify the Title or Author. If Title or Author is null, these must be null.
             4. **Strictness:** If the query description is not related to the title/author in the ways defined above (e.g. vague description, plot summary without names), DO NOT fill the Title or Author fields.
             5. **Keywords:** Use this for extra terms like "illustrated", "first edition", genre, or descriptive terms that didn't match Title/Author.
