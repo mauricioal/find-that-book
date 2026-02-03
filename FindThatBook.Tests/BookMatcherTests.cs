@@ -19,7 +19,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "The Hobbit Tolkien";
-        var intent = new SearchIntent { Title = "The Hobbit", Author = "Tolkien" };
+        var intent = new SearchIntent 
+        { 
+            Title = "The Hobbit", 
+            Author = "Tolkien",
+            ExtractedTitleFragment = "The Hobbit",
+            ExtractedAuthorFragment = "Tolkien"
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -41,7 +47,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "The Hobbit illustrated by Alan Lee";
-        var intent = new SearchIntent { Title = "The Hobbit", Author = "Alan Lee" };
+        var intent = new SearchIntent 
+        { 
+            Title = "The Hobbit", 
+            Author = "Alan Lee",
+            ExtractedTitleFragment = "The Hobbit",
+            ExtractedAuthorFragment = "Alan Lee"
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -64,7 +76,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "Book by Some Guy";
-        var intent = new SearchIntent { Title = "Book", Author = "Some Guy" };
+        var intent = new SearchIntent 
+        { 
+            Title = "Book", 
+            Author = "Some Guy",
+            ExtractedTitleFragment = "Book",
+            ExtractedAuthorFragment = "Some Guy"
+        };
         var candidate = new BookCandidate 
         { 
             Title = "Book", 
@@ -86,7 +104,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "Jane Austen Prejudice";
-        var intent = new SearchIntent { Title = "Prejudice", Author = "Jane Austen" }; 
+        var intent = new SearchIntent 
+        { 
+            Title = "Prejudice", 
+            Author = "Jane Austen",
+            ExtractedTitleFragment = "Prejudice",
+            ExtractedAuthorFragment = "Jane Austen"
+        }; 
         var candidate = new BookCandidate 
         { 
             Title = "Pride and Prejudice", 
@@ -98,8 +122,8 @@ public class BookMatcherTests
         var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
 
         // Assert
-        result.Rank.Should().Be(MatchRank.NearMatch);
-        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
+        result.Rank.Should().Be(MatchRank.StrongMatch);
+        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.ExactTitle);
     }
 
     [Fact]
@@ -107,7 +131,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "Tolkien";
-        var intent = new SearchIntent { Title = "", Author = "Tolkien" };
+        var intent = new SearchIntent 
+        { 
+            Title = "", 
+            Author = "Tolkien",
+            ExtractedTitleFragment = null,
+            ExtractedAuthorFragment = "Tolkien"
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Silmarillion", 
@@ -128,7 +158,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "The Hobbit";
-        var intent = new SearchIntent { Title = "The Hobbit", Author = "" };
+        var intent = new SearchIntent 
+        { 
+            Title = "The Hobbit", 
+            Author = "",
+            ExtractedTitleFragment = "The Hobbit",
+            ExtractedAuthorFragment = null
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -148,7 +184,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "Hobbit";
-        var intent = new SearchIntent { Title = "Hobbit", Author = null };
+        var intent = new SearchIntent 
+        { 
+            Title = "Hobbit", 
+            Author = null,
+            ExtractedTitleFragment = "Hobbit",
+            ExtractedAuthorFragment = null
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -168,7 +210,13 @@ public class BookMatcherTests
     {
         // Arrange
         var rawQuery = "The Hobbit by Brandon Sanderson";
-        var intent = new SearchIntent { Title = "The Hobbit", Author = "Brandon Sanderson" };
+        var intent = new SearchIntent 
+        { 
+            Title = "The Hobbit", 
+            Author = "Brandon Sanderson",
+            ExtractedTitleFragment = "The Hobbit",
+            ExtractedAuthorFragment = "Brandon Sanderson"
+        };
         var candidate = new BookCandidate 
         { 
             Title = "The Hobbit", 
@@ -181,5 +229,89 @@ public class BookMatcherTests
 
         // Assert
         result.Rank.Should().Be(MatchRank.None);
+    }
+
+    [Fact]
+    public void CalculateMatch_ShouldUseExtractedFragment_WhenInferredAuthorDoesNotMatch()
+    {
+        // Arrange
+        // User typed "rowling", inferred "J.K. Rowling". 
+        // Candidate "Joanne Rowling" matches "rowling" but not "J.K. Rowling".
+        
+        var rawQuery = "rowling";
+        var intent = new SearchIntent 
+        { 
+            Title = null, 
+            Author = "J.K. Rowling",
+            ExtractedAuthorFragment = "rowling"
+        };
+        var candidate = new BookCandidate 
+        { 
+            Title = "Some Book", 
+            Authors = new List<string> { "Joanne Rowling" },
+            PrimaryAuthors = new List<string> { "Joanne Rowling" }
+        };
+
+        // Act
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
+
+        // Assert
+        result.Rank.Should().Be(MatchRank.AuthorOnlyFallback);
+    }
+
+    [Fact]
+    public void CalculateMatch_ShouldUseExtractedFragment_WhenInferredTitleDoesNotMatch()
+    {
+        // Arrange
+        // User typed "huckleberry", inferred "The Adventures of Huckleberry Finn". 
+        // Candidate "Huckleberry Finn" matches "huckleberry" but not "The Adventures of Huckleberry Finn" (candidate title is shorter than query).
+        
+        var rawQuery = "huckleberry";
+        var intent = new SearchIntent 
+        { 
+            Title = "The Adventures of Huckleberry Finn", 
+            Author = null,
+            ExtractedTitleFragment = "huckleberry"
+        };
+        var candidate = new BookCandidate 
+        { 
+            Title = "Huckleberry Finn", 
+            Authors = new List<string> { "Mark Twain" } 
+        };
+
+        // Act
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
+
+        // Assert
+        result.Rank.Should().Be(MatchRank.TitleOnlyFallback);
+        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.TitleOnly);
+    }
+
+    [Fact]
+    public void CalculateMatch_ShouldReturnNearMatch_WhenExtractedFragmentDoesNotMatchButInferredTitleDoes()
+    {
+        // Arrange
+        // User typed "wizard story", inferred "Harry Potter".
+        var rawQuery = "wizard story";
+        var intent = new SearchIntent
+        {
+            Title = "Harry Potter",
+            Author = "Rowling",
+            ExtractedTitleFragment = "wizard story",
+            ExtractedAuthorFragment = "Rowling"
+        };
+        var candidate = new BookCandidate
+        {
+            Title = "Harry Potter and the Sorcerer's Stone",
+            Authors = new List<string> { "J.K. Rowling" },
+            PrimaryAuthors = new List<string> { "J.K. Rowling" }
+        };
+
+        // Act
+        var result = _matcher.CalculateMatch(rawQuery, intent, candidate);
+
+        // Assert
+        result.Rank.Should().Be(MatchRank.NearMatch);
+        result.MatchType.Should().Be(FindThatBook.Api.Domain.Enums.MatchType.NearMatchTitle);
     }
 }

@@ -13,14 +13,17 @@ public class BookMatcher : IBookMatcher
     /// <inheritdoc />
     public MatchResult CalculateMatch(string rawQuery, SearchIntent intent, BookCandidate candidate)
     {
-        var normQueryTitle = CleanFunctionWords(intent.Title ?? "");
+        // Use extracted literal fragments for matching if available, otherwise fallback to inferred values
+        var queryTitleToUse = intent.ExtractedTitleFragment ?? intent.Title ?? "";
+        var queryAuthorToUse = intent.ExtractedAuthorFragment ?? intent.Author ?? "";
+
+        var normQueryTitle = CleanFunctionWords(queryTitleToUse);
+        var normSearchTitle = CleanFunctionWords(intent.Title ?? "");
         var normBookTitle = CleanFunctionWords(candidate.Title);
-        var normQueryAuthor = Normalize(intent.Author ?? "");
+        var normQueryAuthor = Normalize(queryAuthorToUse);
         
-        bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle == normQueryTitle;
-        //TODO: Improve near-match logic using the rawQuery and candidate.Title
-        bool nearMatchTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
-        
+        bool exactTitle = !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normQueryTitle);
+        bool nearMatchTitle = !exactTitle && !string.IsNullOrEmpty(normQueryTitle) && normBookTitle.Contains(normSearchTitle);
         bool authorWasRequested = !string.IsNullOrEmpty(normQueryAuthor);
         
         // Check author match against hierarchy

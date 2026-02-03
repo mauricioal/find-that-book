@@ -16,6 +16,16 @@ public class SearchIntent
     public string? Author { get; set; }
 
     /// <summary>
+    /// Gets or sets the literal fragment from the raw query used to infer the Title.
+    /// </summary>
+    public string? ExtractedTitleFragment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the literal fragment from the raw query used to infer the Author.
+    /// </summary>
+    public string? ExtractedAuthorFragment { get; set; }
+
+    /// <summary>
     /// Gets or sets list of keywords extracted from the query.
     /// </summary>
     public List<string> Keywords { get; set; } = new();

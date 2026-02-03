@@ -31,15 +31,18 @@ public class GeminiAiService : IAiService
             ### Rules
             1. **Authors:** Map to "Author" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials)** match of a known author's name.
             2. **Titles:** Map to "Title" ONLY if the query contains an **Exact or normalized (lowercase, punctuation/diacritics, partials or variants like subtitles)** match of a book title.
-            3. **Strictness:** If the query description is not related to the title/author in the ways defined above (e.g. vague description, plot summary without names), DO NOT fill the Title or Author fields.
-            4. **Keywords:** Use this for extra terms like "illustrated", "first edition", genre, or descriptive terms that didn't match Title/Author.
-            5. **Explanation:** For EACH attribute (Title, Author, Keywords), you MUST explain *why* you filled it with that value. Explicitly state if you extracted an exact string from the query or if you transformed it via normalization.
+            3. **Fragments:** For "ExtractedTitleFragment" and "ExtractedAuthorFragment", provide the EXACT literal substring from the user query that was used to identify the Title or Author. If Title or Author is null, these must be null.
+            4. **Strictness:** If the query description is not related to the title/author in the ways defined above (e.g. vague description, plot summary without names), DO NOT fill the Title or Author fields.
+            5. **Keywords:** Use this for extra terms like "illustrated", "first edition", genre, or descriptive terms that didn't match Title/Author.
+            6. **Explanation:** For EACH attribute (Title, Author, Keywords), you MUST explain *why* you filled it with that value. Explicitly state if you extracted an exact string from the query or if you transformed it via normalization.
 
             ### Examples
             User: "tolkien"
             JSON: { 
                 "Title": null, 
                 "Author": "J.R.R. Tolkien", 
+                "ExtractedTitleFragment": null,
+                "ExtractedAuthorFragment": "tolkien",
                 "Keywords": [],
                 "Explanation": {
                     "TitleReason": "No title match found.",
@@ -52,6 +55,8 @@ public class GeminiAiService : IAiService
             JSON: { 
                 "Title": "The Hobbit", 
                 "Author": null, 
+                "ExtractedTitleFragment": "the hobbit",
+                "ExtractedAuthorFragment": null,
                 "Keywords": [],
                 "Explanation": {
                     "TitleReason": "Exact match found.",
@@ -64,6 +69,8 @@ public class GeminiAiService : IAiService
             JSON: { 
                 "Title": null, 
                 "Author": null, 
+                "ExtractedTitleFragment": null,
+                "ExtractedAuthorFragment": null,
                 "Keywords": ["funny book", "wizard"],
                 "Explanation": {
                     "TitleReason": "No exact or normalized title match found in description.",
@@ -76,10 +83,9 @@ public class GeminiAiService : IAiService
             JSON: { 
                 "Title": "The Adventures of Huckleberry Finn", 
                 "Author": "Mark Twain", 
+                "ExtractedTitleFragment": "huckleberry",
+                "ExtractedAuthorFragment": "mark",
                 "Keywords": [],
-                "Title": null, 
-                "Author": null, 
-                "Keywords": ["funny book", "wizard"],
                 "Explanation": {
                     "TitleReason": "Inferred title from 'huckleberry'.",
                     "AuthorReason": "Inferred 'Mark Twain' from 'mark' in context of 'huckleberry'.",
