@@ -19,6 +19,8 @@ builder.Services.AddEndpointsApiExplorer();
 // Configuration
 builder.Services.Configure<ExternalServicesConfig>(
     builder.Configuration.GetSection("ExternalServices"));
+builder.Services.Configure<GeminiConfig>(
+    builder.Configuration.GetSection("Gemini"));
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -67,7 +69,9 @@ builder.Services.AddCors(options =>
 });
 
 // AI Configuration
-var geminiApiKey = builder.Configuration["Gemini:ApiKey"] ?? "YOUR_API_KEY_HERE";
+var geminiConfig = builder.Configuration.GetSection("Gemini").Get<GeminiConfig>();
+var geminiApiKey = geminiConfig?.ApiKey ?? builder.Configuration["Gemini:ApiKey"] ?? "YOUR_API_KEY_HERE";
+
 builder.Services.AddSingleton<IChatClient>(new GeminiChatClient(new GeminiClientOptions 
 { 
     ApiKey = geminiApiKey,

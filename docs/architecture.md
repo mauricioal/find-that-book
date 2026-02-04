@@ -11,6 +11,8 @@ classDiagram
         class SearchIntent {
             +string? Title
             +string? Author
+            +string? ExtractedTitleFragment
+            +string? ExtractedAuthorFragment
             +List~string~ Keywords
             +IntentExplainer? Explanation
         }

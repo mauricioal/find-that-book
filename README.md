@@ -124,7 +124,7 @@ The solution follows **Clean Architecture** to ensure separation of concerns and
     *   Near Match (Partial Title)
     *   Author Fallback
 *   **AI Explanations**: Returns a "Why it matched" sentence for every result, grounded in the actual data.
-*   **Canonical Data**: Resolves works to their canonical versions to avoid duplicates.
+*   **Canonical Data**: Resolves works to their canonical versions to avoid duplicates. (Not implemented yet)
 *   **Security Hardening**:
     *   **Rate Limiting**: Implements `FixedWindowLimiter` (10 requests/minute) to prevent abuse.
     *   **Prompt Injection Mitigation**: Uses XML delimiters (`<user_query>`) and explicit instruction ignoring to protect LLM contexts.
@@ -162,7 +162,7 @@ This project utilizes advanced **Context Engineering** to ensure consistency and
 
 ### 🛠 Code & Architecture (Short-term)
 1.  **Code Quality & Typing**: Audit the usage of `var` and explicit types throughout the solution to ensure that variables are typed as abstractions (interfaces) where appropriate for better decoupling and testability.
-2.  **Configuration Management**: Extract all external service URLs (OpenLibrary, etc.) into `appsettings.json` or Environment Variables for better flexibility across environments.
+2.  **Configuration Management**: Extract all external service URLs (OpenLibrary, etc.) into `appsettings.json` or Environment Variables for better flexibility across environments. (Done)
 3.  **Refined Explanations**: Fine-tune the AI prompts or use few-shot prompting to ensure the "Why it matched" explanations strictly adhere to the requested format and tone.
 4.  **Frontend Polish**: Refactor the React project structure to follow feature-based folders and improve component reusability/design.
 5.  **Integration Tests**: Add `TestServer` backend integration tests to verify API endpoints in a simulated environment.

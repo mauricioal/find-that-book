@@ -1,7 +1,9 @@
 using System.Text.Json;
+using FindThatBook.Api.Application.DTOs;
 using FindThatBook.Api.Application.Interfaces;
 using FindThatBook.Api.Domain.Entities;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 
 namespace FindThatBook.Api.Infrastructure.AI;
 
@@ -11,15 +13,37 @@ namespace FindThatBook.Api.Infrastructure.AI;
 public class GeminiAiService : IAiService
 {
     private readonly IChatClient _chatClient;
+    private readonly GeminiConfig _config;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeminiAiService"/> class.
     /// </summary>
     /// <param name="chatClient">The chat client used to communicate with the Gemini API.</param>
-    public GeminiAiService(IChatClient chatClient)
+    /// <param name="options">Configuration options for Gemini.</param>
+    public GeminiAiService(IChatClient chatClient, IOptions<GeminiConfig> options)
     {
         _chatClient = chatClient;
+        _config = options.Value;
+    }
+
+    private ChatOptions CreateChatOptions()
+    {
+        var options = new ChatOptions
+        {
+            MaxOutputTokens = _config.MaxOutputTokens,
+            Temperature = _config.Temperature,
+            TopP = _config.TopP,
+            TopK = _config.TopK,
+        };
+
+        if (_config.Seed.HasValue)
+        {
+            options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            options.AdditionalProperties["seed"] = _config.Seed.Value;
+        }
+
+        return options;
     }
 
     /// <inheritdoc />
@@ -106,7 +130,7 @@ public class GeminiAiService : IAiService
             Return ONLY the JSON object.
             """;
 
-        var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
+        var response = await _chatClient.GetResponseAsync(prompt, CreateChatOptions(), cancellationToken: ct);
         var content = CleanLlmJson(response.Text);
 
         try 
@@ -160,7 +184,7 @@ public class GeminiAiService : IAiService
             {{JsonSerializer.Serialize(candidatesData)}}
             """;
 
-        var response = await _chatClient.GetResponseAsync(prompt, cancellationToken: ct);
+        var response = await _chatClient.GetResponseAsync(prompt, CreateChatOptions(), cancellationToken: ct);
         var content = CleanLlmJson(response.Text);
 
         try 
