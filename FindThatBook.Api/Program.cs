@@ -75,7 +75,7 @@ var geminiApiKey = geminiConfig?.ApiKey ?? builder.Configuration["Gemini:ApiKey"
 builder.Services.AddSingleton<IChatClient>(new GeminiChatClient(new GeminiClientOptions 
 { 
     ApiKey = geminiApiKey,
-    ModelId = "gemini-2.5-flash"
+    ModelId = geminiConfig?.ModelId ?? "gemini-2.5-flash"
 }));
 
 // Infrastructure & Application

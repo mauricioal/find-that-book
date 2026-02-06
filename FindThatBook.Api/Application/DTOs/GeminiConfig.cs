@@ -6,6 +6,7 @@ namespace FindThatBook.Api.Application.DTOs;
 public class GeminiConfig
 {
     public string ApiKey { get; set; } = string.Empty;
+    public string ModelId { get; set; } = "gemini-2.5-flash";
     public int? MaxOutputTokens { get; set; }
     public float? Temperature { get; set; }
     public float? TopP { get; set; }
